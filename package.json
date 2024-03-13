@@ -1,0 +1,129 @@
+{
+  "name": "download-git",
+  "version": "0.0.1",
+  "description": "Download a repo very quickly or specific files and folders",
+  "main": "./dist/source/main.js",
+  "bin": {
+    "dlg": "./dist/source/main.mjs"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "start:dev": "ts-node",
+    "test": "npm run build && c8 ava",
+    "test:single": "npm run build && ava",
+    "lint": "npx eslint source --ext .mts",
+    "lint:strict": "npx eslint --config ./eslint-strict.json source --ext .mts",
+    "build": "tsc --build --incremental",
+    "build:clean": "rimraf ./dist && tsc --build"
+  },
+  "c8": {
+    "reporter": [
+      "html",
+      "lcov"
+    ],
+    "all": true,
+    "src": "./dist/source",
+    "extension": [
+      ".mjs",
+      ".js"
+    ],
+    "exclude": [
+      "**/tests/**",
+      "**/fixtures/**",
+      "./source/cli/helpText.mts"
+    ]
+  },
+  "ava": {
+    "failFast": true,
+    "files": [
+      "tests/**",
+      "!tests/fixtures/**"
+    ],
+    "typescript": {
+      "rewritePaths": {
+        "source/": "dist/source/",
+        "tests/": "dist/tests/"
+      },
+      "compile": false,
+      "extensions": [
+        "ts",
+        "tsx",
+        "mts"
+      ]
+    }
+  },
+  "keywords": [
+    "cli",
+    "scaffolding",
+    "project-builder",
+    "templates",
+    "template",
+    "templating",
+    "builder",
+    "launcher",
+    "starter",
+    "starter-kit",
+    "create-react-app",
+    "custom",
+    "cra"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@ava/typescript": "^4.1.0",
+    "@stylistic/eslint-plugin": "^1.6.3",
+    "@swc/core": "^1.3.101",
+    "@types/blocked-at": "^1.0.4",
+    "@types/make-fetch-happen": "^10.0.4",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.56",
+    "@types/sinon": "^17.0.3",
+    "@types/tar": "^6.1.11",
+    "@types/wtfnode": "^0.7.3",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "ava": "^6.1.1",
+    "blocked-at": "^1.2.0",
+    "c8": "^9.1.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-ava": "^14.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-sonarjs": "^0.24.0",
+    "eslint-plugin-sort-class-members": "^1.20.0",
+    "eslint-plugin-typescript-sort-keys": "^3.2.0",
+    "eslint-plugin-unicorn": "^51.0.1",
+    "faucet": "^0.0.4",
+    "nyc": "^15.1.0",
+    "sinon": "^17.0.1",
+    "strip-ansi": "^7.1.0",
+    "tap": "^18.7.1",
+    "tinybench": "^2.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^7.1.0",
+    "wtfnode": "^0.9.1"
+  },
+  "dependencies": {
+    "@clack/core": "^0.3.4",
+    "degit": "^2.8.4",
+    "dotenv": "^16.4.5",
+    "execa": "^8.0.1",
+    "find-up": "^7.0.0",
+    "log-update": "^6.0.0",
+    "make-fetch-happen": "^13.0.0",
+    "meow": "^13.2.0",
+    "ora": "^8.0.1",
+    "p-map": "^7.0.1",
+    "react": "^18.2.0",
+    "rimraf": "^5.0.5",
+    "simple-git": "^3.22.0",
+    "string-width": "^7.1.0",
+    "tar": "^6.2.0",
+    "undici": "^6.7.1",
+    "wrap-ansi": "^9.0.0",
+    "yaml": "^2.3.4"
+  }
+}
