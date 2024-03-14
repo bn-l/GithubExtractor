@@ -3,6 +3,7 @@ import tar from "tar";
 import fs from "node:fs";
 import logUpdate from "log-update";
 import { simpleGit } from "simple-git";
+import zlib from "node:zlib";
 
 
 // !! If main doesn't work try master
@@ -36,21 +37,21 @@ console.log("Extracting took: ", performance.now() - t0);
 const git = simpleGit({ baseDir: cwd });
 
 
-fstream
-    .pipe(zlib.Unzip())
-    .pipe(tar.Parse())
-    .on("entry", function(entry) {
-        if (entry.path == "myfile") {
-            console.log("found myfile");
+// fstream
+//     .pipe(zlib.unzip()) 
+//     .pipe(tar.Parse())
+//     .on("entry", function(entry) {
+//         if (entry.path == "myfile") {
+//             console.log("found myfile");
 
-            // save file
-            entry.on("end", function() {
-                fstream.close();
-            }).pipe(fs.createWriteStream(entry.path));
-        }
-    });
+//             // save file
+//             entry.on("end", function() {
+//                 fstream.close();
+//             }).pipe(fs.createWriteStream(entry.path));
+//         }
+//     });
 
 
-t0 = performance.now();
-await git.clone("https://github.com/npm/minipass-fetch", "devtools", [ "--depth", "1" ]);
-console.log("Cloning took: ", performance.now() - t0);
+// t0 = performance.now();
+// await git.clone("https://github.com/npm/minipass-fetch", "devtools", [ "--depth", "1" ]);
+// console.log("Cloning took: ", performance.now() - t0);
