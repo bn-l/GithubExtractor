@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import zlib from "node:zlib";
 import tar from "tar";
-import { fetch } from "undici";
+import { request } from "undici";
 import fastlev from "fastest-levenshtein";
 
 
@@ -48,10 +48,11 @@ export async function extractRepo(
     const foundPaths: string[] = [];
 
     const res = await fetch(tarurl, { signal });
-
+    
+    const { statusCode, headers, body } = await request(tarurl);
 
     await pipeline(
-        Readable.from(res.body!),
+        body,
         gzip
             .pipe(parse)
             .on("entry", entry => {
@@ -62,7 +63,7 @@ export async function extractRepo(
                     fs.mkdirSync(path.dirname(path.join(dest, entry.path)), { recursive: true });
 
                     entry.pipe(fs.createWriteStream(path.join(dest, entry.path)).on("finish", () => {
-                        if (selective && fileSet.size === 0) controller.abort();
+                        if (selective && fileSet.size === 0) body.destroy();
                     }));
                     entry.resume();
                 } 
