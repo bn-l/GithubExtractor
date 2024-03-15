@@ -2,6 +2,12 @@
 // name: github-dl
 // bin: gdl
 
+// Universal Return types
+// (stats - data)
+// conflicts - paths
+// list - path
+// didyoumean - {path: suggestion}[]
+// 
 
 // cli:
 // ----
@@ -22,8 +28,7 @@
 // - when running non cli will return a status object with {status: "conflicts", data: conflicts}
 // - set intersection to determine conflicts
 
-// ! Update:
-// Can only 
+// ! Use api for ent selection and tar for whole folder
 
 // Filtering
 // - Just pass arg to Regex (and fail and show error if it's not valid). split("/") to get body + flags. will only save files matching the filter. Use in node-tar filter function.

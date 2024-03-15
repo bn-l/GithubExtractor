@@ -7,6 +7,9 @@ import tar from "tar";
 import { fetch } from "undici";
 import fastlev from "fastest-levenshtein";
 
+// !! default branch:
+// https://api.github.com/repos/facebook/react
+
 
 const { closest } = fastlev;
 
@@ -23,13 +26,14 @@ const { closest } = fastlev;
 
 // const file = "/dom/ipc/tests/browser_crash_oopiframe.js";
 
+// !! Error if at end and some files weren't found. Suggest spell checking with closest.
 
-type PossibleTypos = { allPaths: string[]; missing: string[] };
+type Didyoumean = { path: string; suggestion: string };
 
 export async function extractRepo(
     { dest, owner, repo, defaultBranch, selected = [] }: 
     { defaultBranch: string; dest: string; owner: string; repo: string; selected: string[] }
-): Promise<PossibleTypos> {
+): Promise<Didyoumean[]> {
     
     const selective = selected.length > 0; 
     selected = selected.map(file => {
@@ -49,6 +53,7 @@ export async function extractRepo(
 
     const res = await fetch(tarurl, { signal });
 
+    let didyoumean: Didyoumean[] = [];
 
     await pipeline(
         Readable.from(res.body!),
@@ -66,8 +71,15 @@ export async function extractRepo(
                     }));
                     entry.resume();
                 } 
+            }).on("end", () => {
+                if (fileSet.size) {
+                    
+                    for (const path of fileSet.values()) {
+                        didyoumean.push({ path, suggestion: closest(path, foundPaths) });
+                    }
+                }
             })
     );
 
-    return { allPaths: foundPaths, missing: Array.from(fileSet) };
+    return didyoumean;
 }
