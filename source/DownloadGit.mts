@@ -1,6 +1,6 @@
 import "./shimSet.mjs";
 
-import { FileConflictError } from "./custom-errors.mjs";
+import { FileConflictError, MissingInJSONError, APIFetchError } from "./custom-errors.mjs";
 
 import fastlev from "fastest-levenshtein";
 import crypto from "node:crypto";
@@ -19,8 +19,9 @@ import fsm from "fs-minipass";
 
 const { closest } = fastlev;
 
-type NonExistantPaths = { allPaths: string[]; nonExistant: string[] };
+type Typo = [original: string, correction: string];
 
+type ListResult = { status: "truncated" | "full"; repoList: string[] };
 
 interface GHTreeReponse {
     sha: string;
@@ -37,16 +38,19 @@ interface GHTreeReponse {
 }
 
 interface DownloadGitOptions {
-    caseInsensitive: boolean; 
     dest: string; 
     owner: string; 
     repo: string; 
+    caseInsensitive?: boolean; 
     cacheDir?: string;
     selectedPaths?: Set<string>; 
     defaultBranch?: string; 
     tarUrl?: string;
 }
 
+interface BaseReposResponse {
+    default_branch: string;
+}
 
 export class DownloadGit {
 
@@ -60,15 +64,14 @@ export class DownloadGit {
     public tarUrl: DownloadGitOptions["tarUrl"];
 
     protected defaultBranch: DownloadGitOptions["defaultBranch"];
-    protected foundPaths: string[] = [];
-    protected repoList: string[] | undefined;
+    protected repoList: ListResult | undefined;
     
 
     constructor(
         { caseInsensitive, dest, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl }: DownloadGitOptions
     ) {
 
-        this.caseInsensitive = caseInsensitive;
+        if (caseInsensitive) this.caseInsensitive = caseInsensitive;
         this.cacheDir = cacheDir ?? path.resolve(temporaryDirectory, "gitdownloads", repo);
         this.defaultBranch = defaultBranch;
 
@@ -102,78 +105,130 @@ export class DownloadGit {
         const normalized = valueArray.map(filePath => this.normalizeFilePath(filePath));
         return new Set(normalized);
     }
+
+    protected async getApiResponse<TResponseObject extends object>(endpoint: string, expectedTopLevel: string[]) {
+        
+        const t0 = performance.now();
+
+        const { statusCode, headers, body } = await request(endpoint, {
+            maxRedirections: 5, 
+            headers: {
+                "cache-control": "no-cache",
+                "pragma": "no-cache",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            },
+        });
+
+        if (statusCode !== 200) { 
+
+            const { "x-ratelimit-remaining": remaining, "x-ratelimit-reset": resetIn } = headers;
+
+            if (remaining && Number(remaining) === 0) {
+                const resetInDateNum = new Date(Number(resetIn)).getTime();
+
+                const wait = !Number.isNaN(resetInDateNum) ? 
+                    Math.ceil((resetInDateNum * 1000) - Date.now() / 1000 / 60) :
+                    undefined;
+
+                throw new APIFetchError("Rate limit exceeded" + (resetIn ? `Please wait ${ wait } minutes` : ""));
+            }
+
+            throw new APIFetchError(`Error getting response from: ${ endpoint } StatusCode: ${ statusCode } Headers: ${ JSON.stringify(headers) }, Body: ${ (await body.text()).slice(0, 2000) }`);
+        }
+
+        let text = await body.text();
+
+        try {
+            const parsed = JSON.parse(text) as TResponseObject;
+
+            if (!expectedTopLevel.every(key => key in parsed)) {
+                throw new MissingInJSONError(`Could not find: ${ expectedTopLevel.join(", ") }, in json returned from: ${ endpoint }`);
+            }
+
+            console.log(`${ performance.now() - t0 }ms to get response from ${ endpoint }`);
+            
+            return parsed;
+        }
+        catch (error) {
+            throw error;
+        }
+    }
  
     protected async getDefaultBranch() {
 
         if (this.defaultBranch) return this.defaultBranch;
 
         const url = `https://api.github.com/repos/${ this.owner }/${ this.repo }`;
-        const { statusCode, headers, body } = await request(url);
-        const data = await body.json() as { default_branch: string };
         
-        if (!("default_branch" in data)) {
-            throw new Error("No default branch found in response from " + url);
-        }
+        const { default_branch } = await this.getApiResponse<BaseReposResponse>(url, ["default_branch"]);
 
-        return this.defaultBranch = data.default_branch;
+        return this.defaultBranch = default_branch;
     }
 
     protected async getTarUrl() {
         if (this.tarUrl) return this.tarUrl;
+
         const defaultBranch = await this.getDefaultBranch();
         const url = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/${ defaultBranch }.tar.gz`;
+
         return this.tarUrl = url;
     }
 
-    protected dualPipe(controller: AbortController) {
-        const teePipe = new Minipass();
+    protected async handleTypos(): Promise<Typo[]> {
 
-        const writePipe = new fsm.WriteStream(this.tarFilePath);
+        if (!this.selectedPaths) return [];
 
-        const extractPipe = tar.extract({
-            cwd: this.selectedPaths ? this.dest : this.cacheDir,
-            strip: 1,
-            filter: (path) => {
-                path = this.normalizeTarPath(path);
-                if (this.selectedPaths?.has(path)) {
-                    this.selectedPaths.delete(path);
-                    return true;
-                }
-                return false;
-            },
-            onentry: (entry) => {
-                this.foundPaths.push(entry.path);
-                entry.on("end", () => {
-                    if (this.selectedPaths?.size === 0) controller.abort();
-                });
-            },
-        });
-        
-        teePipe.pipe(writePipe);
-        teePipe.pipe(extractPipe);
+        const { repoList } = await this.getRepoList();
 
-        return teePipe;
+        const typos: Typo[] = [];
+        for (const original of this.selectedPaths.values()) {
+
+            const correction = closest(original, repoList);
+            typos.push([original, correction]);
+        }
+        return typos;
     }
 
-    public async download(): Promise<NonExistantPaths> {
-
-        await this.getDefaultBranch();
-
-        const foundPaths: string[] = []; // used to find nonexistant (and maybe typo) paths
+    public async downloadIntoDest() {
 
         const tarurl = await this.getTarUrl();
         const controller = new AbortController();
-        const dualPipe = this.dualPipe(controller);
         const { statusCode, headers, body } = await request(tarurl, { maxRedirections: 5, signal: controller.signal });
 
         try {
-            await pipeline(body, dualPipe);
+            await pipeline(
+                body, 
+                tar.extract({
+                    cwd: this.dest,
+                    strip: 1,
+                    filter: (path) => {
+                        path = this.normalizeTarPath(path);
+                        if (this.selectedPaths?.has(path)) {
+                            this.selectedPaths.delete(path);
+                            return true;
+                        }
+                        return false;
+                    },
+                    onentry: (entry) => {
+
+                        entry.on("end", () => {
+                            if (this.selectedPaths?.size === 0) {
+                                controller.abort();
+                            }
+                        });
+                    },
+                })
+            );
+
+            return [];
         }
         catch (error) {
-            
-            await rimraf(this.tarFilePath, { preserveRoot: true });
-
-            if (error instanceof Error && error.name !== "AbortError") {
+        
+            if (error instanceof Error && error.name === "AbortError") {
+                // if we still haven't struck out all the paths, there might be typos
+                if (this.selectedPaths?.size) return this.handleTypos();
+            }
+            else if (error instanceof Error) {
 
                 const cust = new Error(`Error extracting ${ tarurl } to ${ this.cacheDir }. Message: ${ error.message }, statusCode: ${ statusCode }, headers: ${ JSON.stringify(headers) }`);
                 
@@ -181,14 +236,18 @@ export class DownloadGit {
                 throw cust;
             }
             throw error;
-        }
 
-        return { allPaths: foundPaths, nonExistant: Array.from(this.selectedPaths ?? []) };
+        }
+        finally {
+
+            body.destroy();
+            await rimraf(this.tarFilePath, { preserveRoot: true });
+        }
     }
 
     public async getConflicts() {
         
-        const repoList = await this.getRepoList();
+        const { repoList } = await this.getRepoList();
 
         let repoSet = new Set(this.selectedPaths ?? repoList);
         repoSet = this.normalizePathSet(repoSet);
@@ -201,63 +260,38 @@ export class DownloadGit {
         return conflicts;
     }
 
-    public async getRepoList() {
-        await this.getDefaultBranch();
+    public async getRepoList(): Promise<ListResult> {
+
         if (this.repoList) return this.repoList;
 
-        const endpoint = `https://api.github.com/repos/${ this.owner }/${ this.repo }/git/trees/${ this.defaultBranch }?recursive=1`;
+        const defaultBranch = await this.getDefaultBranch();
+
+        const endpoint = `https://api.github.com/repos/${ this.owner }/${ this.repo }/git/trees/${ defaultBranch }?recursive=1`;
         
-        const { statusCode, headers, body } = await request(endpoint);
-        const data = (await body.json()) as GHTreeReponse;
-    
-        const pathsFromApi: string[] = [];
-    
-        for (const treeEnt of data.tree) {
-            pathsFromApi.push(this.normalizeFilePath(treeEnt.path));
-        }
-        
-        if (data.truncated) {
-            const { allPaths: pathsFromTar } = await this.download();
-            return pathsFromTar;
-        }
-        
-        return pathsFromApi;
+        const { tree, truncated } = await this.getApiResponse<GHTreeReponse>(endpoint, ["tree"]);
+
+        const repoList = tree.map(({ path }) => path);
+
+        return this.repoList = { status: truncated ? "truncated" : "full", repoList };
     }
-
-
-    public async moveFilesIn(
-        { selectedFiles, force = false }:
-        { selectedFiles?: Set<string>; force: boolean }
-    ) {
-        
-        
-        if (!force) {
-            const conflicts = await this.getConflicts();
-            if (conflicts.size) {
-                throw new FileConflictError({ conflicts: Array.from(conflicts) });
-            }
-        }
-        
-        if (selectedFiles) selectedFiles = this.normalizePathSet(selectedFiles);
-        await this.download(selectedFiles);
-        
-        const cacheDirContents = await fsp.readdir(this.cacheDir);
-
-        await pMap(cacheDirContents, async(ent) => {
-            const src = path.join(this.cacheDir, ent);
-            const dest = path.join(this.dest, ent);
-
-            return fsp.cp(src, dest, { preserveTimestamps: true });
-
-        }, { concurrency: 10 });
-
-    }
-    
-    public async clearCache() {
-        this.repoList = undefined;
-        this.defaultBranch = undefined;
-
-        await rimraf(this.cacheDir, { preserveRoot: true });
-    }
-
 }
+
+// add getStreamingApiResponse and streaming list method.
+
+
+const d = new DownloadGit({
+    dest: ".tmp",
+    owner: "sindresorhus",
+    repo: "ky",
+    selectedPaths: new Set([".cron.yml"]),
+});
+
+const t0 = performance.now();
+
+const { repoList, status } = await d.getRepoList();
+
+console.log(status, repoList.length);
+
+console.log(`Time overall: ${ performance.now() - t0 }`);
+
+// sindresorhus ky ~ 803 ms
