@@ -9,6 +9,12 @@ import temporaryDirectory from "temp-dir";
 // ------
 // No cache and delete temp folder when finished with it
 
+// Problematic dealing with copy, and tar extract is very fast.
+// download method:
+// Will only cache the tar and will check if it exists before downloading
+// uses the dest property
+
+
 // !! Saved as 
 
 // cli:

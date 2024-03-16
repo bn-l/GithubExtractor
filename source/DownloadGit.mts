@@ -13,6 +13,8 @@ import tar from "tar";
 import temporaryDirectory from "temp-dir";
 import { request } from "undici";
 import pMap from "p-map";
+import { Minipass } from "minipass";
+import fsm from "fs-minipass";
 
 
 const { closest } = fastlev;
@@ -34,41 +36,70 @@ interface GHTreeReponse {
     url: string;
 }
 
+interface DownloadGitOptions {
+    caseInsensitive: boolean; 
+    dest: string; 
+    owner: string; 
+    repo: string; 
+    cacheDir?: string;
+    selectedPaths?: Set<string>; 
+    defaultBranch?: string; 
+    tarUrl?: string;
+}
+
 
 export class DownloadGit {
 
     public cacheDir: string;
-    public dest: string;
-    public owner: string;
-    public repo: string;
-    public selectedFiles: string[] | undefined;
-    
-    protected defaultBranch: string | undefined;
+    public caseInsensitive: DownloadGitOptions["caseInsensitive"] = false;
+    public dest: DownloadGitOptions["dest"];
+    public owner: DownloadGitOptions["owner"];
+    public repo: DownloadGitOptions["repo"];
+    public selectedPaths: DownloadGitOptions["selectedPaths"];
+    public tarFilePath: string;
+    public tarUrl: DownloadGitOptions["tarUrl"];
+
+    protected defaultBranch: DownloadGitOptions["defaultBranch"];
+    protected foundPaths: string[] = [];
     protected repoList: string[] | undefined;
+    
 
     constructor(
-        { dest, owner, repo, selectedFiles, cacheDir, defaultBranch }:
-        { dest: string; owner: string; repo: string; selectedFiles?: string[]; defaultBranch?: string; cacheDir?: string }
+        { caseInsensitive, dest, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl }: DownloadGitOptions
     ) {
 
+        this.caseInsensitive = caseInsensitive;
         this.cacheDir = cacheDir ?? path.resolve(temporaryDirectory, "gitdownloads", repo);
         this.defaultBranch = defaultBranch;
-        this.selectedFiles = selectedFiles;
+
+        if (selectedPaths) this.selectedPaths = this.normalizePathSet(selectedPaths);
+
+        this.tarUrl = tarUrl;
+        
         this.dest = dest;
         this.owner = owner;
         this.repo = repo;
 
         fs.mkdirSync(this.cacheDir, { recursive: true });
         fs.mkdirSync(this.dest, { recursive: true });
+
+        this.tarFilePath = path.join(this.cacheDir, `${ repo }.tar.gz`);
     }
     
-    protected normalizePath(filePath: string) {
-        return filePath.toLowerCase();
+    protected normalizeTarPath(tarPath: string) {
+        // someprefixdir/somefile.txt -> somefile.txt
+        return this.caseInsensitive ?
+            tarPath.slice(tarPath.indexOf("/") + 1).toLowerCase() :
+            tarPath.slice(tarPath.indexOf("/") + 1);
+    }
+
+    protected normalizeFilePath(filePath: string) {
+        return this.caseInsensitive ? filePath.toLowerCase() : filePath;
     }
 
     protected normalizePathSet(filePathSet: Set<string>) {
         const valueArray = Array.from(filePathSet.values());
-        const normalized = valueArray.map(filePath => this.normalizePath(filePath));
+        const normalized = valueArray.map(filePath => this.normalizeFilePath(filePath));
         return new Set(normalized);
     }
  
@@ -87,58 +118,79 @@ export class DownloadGit {
         return this.defaultBranch = data.default_branch;
     }
 
-    
-    public async downloadRepo(selectedFiles?: Set<string>): Promise<NonExistantPaths> {
+    protected async getTarUrl() {
+        if (this.tarUrl) return this.tarUrl;
+        const defaultBranch = await this.getDefaultBranch();
+        const url = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/${ defaultBranch }.tar.gz`;
+        return this.tarUrl = url;
+    }
+
+    protected dualPipe(controller: AbortController) {
+        const teePipe = new Minipass();
+
+        const writePipe = new fsm.WriteStream(this.tarFilePath);
+
+        const extractPipe = tar.extract({
+            cwd: this.selectedPaths ? this.dest : this.cacheDir,
+            strip: 1,
+            filter: (path) => {
+                path = this.normalizeTarPath(path);
+                if (this.selectedPaths?.has(path)) {
+                    this.selectedPaths.delete(path);
+                    return true;
+                }
+                return false;
+            },
+            onentry: (entry) => {
+                this.foundPaths.push(entry.path);
+                entry.on("end", () => {
+                    if (this.selectedPaths?.size === 0) controller.abort();
+                });
+            },
+        });
+        
+        teePipe.pipe(writePipe);
+        teePipe.pipe(extractPipe);
+
+        return teePipe;
+    }
+
+    public async download(): Promise<NonExistantPaths> {
 
         await this.getDefaultBranch();
 
-        if (selectedFiles) selectedFiles = this.normalizePathSet(selectedFiles);
-
-        const tarurl = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/${ this.defaultBranch }.tar.gz`;
-
         const foundPaths: string[] = []; // used to find nonexistant (and maybe typo) paths
 
-        const { statusCode, headers, body } = await request(tarurl, { maxRedirections: 5 });
+        const tarurl = await this.getTarUrl();
+        const controller = new AbortController();
+        const dualPipe = this.dualPipe(controller);
+        const { statusCode, headers, body } = await request(tarurl, { maxRedirections: 5, signal: controller.signal });
 
         try {
-            await pipeline(
-                body,
-                tar.extract({
-                    cwd: this.cacheDir,
-                    strip: 1,
-                    filter(path) {
-                        path = path.toLowerCase();
-                        if (selectedFiles?.has(path)) {
-                            selectedFiles.delete(path);
-                            return true;
-                        }
-                        return false;
-                    },
-                    onentry(entry) {
-                        foundPaths.push(entry.path);
-                        entry.on("end", () => {
-                            if (selectedFiles?.size === 0) body.destroy();
-                        });
-                    },
-                })
-            );
+            await pipeline(body, dualPipe);
         }
         catch (error) {
-            // @ts-expect-error no guard
-            const cust = new Error(`Error extracting ${ tarurl } to ${ this.cacheDir }. Message: ${ error.message }, statusCode: ${ statusCode }, headers: ${ JSON.stringify(headers) }`);
-            // @ts-expect-error no guard
-            cust.stack = error.stack;
-            throw cust;
+            
+            await rimraf(this.tarFilePath, { preserveRoot: true });
+
+            if (error instanceof Error && error.name !== "AbortError") {
+
+                const cust = new Error(`Error extracting ${ tarurl } to ${ this.cacheDir }. Message: ${ error.message }, statusCode: ${ statusCode }, headers: ${ JSON.stringify(headers) }`);
+                
+                cust.stack = error.stack ?? "undefined";
+                throw cust;
+            }
+            throw error;
         }
 
-        return { allPaths: foundPaths, nonExistant: Array.from(selectedFiles ?? []) };
+        return { allPaths: foundPaths, nonExistant: Array.from(this.selectedPaths ?? []) };
     }
 
     public async getConflicts() {
         
         const repoList = await this.getRepoList();
 
-        let repoSet = new Set(this.selectedFiles ?? repoList);
+        let repoSet = new Set(this.selectedPaths ?? repoList);
         repoSet = this.normalizePathSet(repoSet);
 
         let destSet = new Set(await fsp.readdir(this.dest));
@@ -161,28 +213,15 @@ export class DownloadGit {
         const pathsFromApi: string[] = [];
     
         for (const treeEnt of data.tree) {
-            pathsFromApi.push(this.normalizePath(treeEnt.path));
+            pathsFromApi.push(this.normalizeFilePath(treeEnt.path));
         }
         
         if (data.truncated) {
-            const { allPaths: pathsFromTar } = await this.downloadRepo();
+            const { allPaths: pathsFromTar } = await this.download();
             return pathsFromTar;
         }
         
         return pathsFromApi;
-    }
-
-    protected async hashPipeline(filePath: string) {
-
-        const hash = crypto.createHash("MD5");
-
-        await pipeline(
-            fs.createReadStream(filePath, { encoding: "utf8" }),
-            crypto.createHash("MD5")
-        );
-
-        const hashDigest = hash.digest("hex");
-        return [filePath, hashDigest];
     }
 
 
@@ -200,28 +239,18 @@ export class DownloadGit {
         }
         
         if (selectedFiles) selectedFiles = this.normalizePathSet(selectedFiles);
-        await this.downloadRepo(selectedFiles);
+        await this.download(selectedFiles);
         
-        const repoList = await this.getRepoList();
+        const cacheDirContents = await fsp.readdir(this.cacheDir);
 
-        await pMap(repoList, async(filePath) => {
-            const src = path.join(this.cacheDir, filePath);
-            const dest = path.join(this.dest, filePath);
+        await pMap(cacheDirContents, async(ent) => {
+            const src = path.join(this.cacheDir, ent);
+            const dest = path.join(this.dest, ent);
 
             return fsp.cp(src, dest, { preserveTimestamps: true });
+
         }, { concurrency: 10 });
 
-        if (selectedFiles) {
-            await fsp.cp(this.cacheDir, this.dest, { 
-                recursive: true, force: true, preserveTimestamps: true, filter: (source, _) => {
-                    const normalizedRelSource = path.relative(this.cacheDir, source).toLowerCase();
-                    return !selectedFiles || selectedFiles.has(normalizedRelSource);
-                },
-            });
-        }
-        else {
-            await fsp.cp(this.cacheDir, this.dest, { recursive: true, force: true, preserveTimestamps: true });
-        }
     }
     
     public async clearCache() {

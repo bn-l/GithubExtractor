@@ -34,10 +34,7 @@ await pipeline(
             console.log(entry.path);
             if (entry.path.endsWith(file)) {
                 console.log("found file");
-                fs.mkdirSync(path.dirname(path.join(".tmp", entry.path)), { recursive: true });
-                entry.pipe(fs.createWriteStream(path.join(".tmp", entry.path)).on("finish", () => {
-                    controller.abort();
-                }));
+                
             }
             entry.resume();
         })

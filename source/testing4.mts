@@ -23,54 +23,35 @@ const { statusCode, headers, body } = await request(tarurl, { maxRedirections: 5
 
 // console.log(statusCode, headers);
 
-const pathSet = new Set([".github/ISSUE_TEMPLATE/config.yml"].map(p => p.toLowerCase()));
+const pathSet = new Set([".cron.yml"].map(p => p.toLowerCase()));
 
-await pipeline(
-    body,
-    tar.extract({
-        cwd: "./.tmp/",
-        strip: 1,
-        filter(path) {
-            path = path.toLowerCase();
-            if (pathSet.has(path)) {
-                pathSet.delete(path);
-                return true;
-            }
-            return false;
-        },
-        onentry(entry) {
-            entry.on("end", () => {
-                if (pathSet.size === 0) body.destroy();
-            });
-        },
-    })
-);
+// RequestAbortedError [AbortError]
 
-// await pipeline(
-//     body,
-//     gzip
-//         .pipe(parse)
-//         .on("entry", entry => {
-
-//             const normalizedPath = normalizePath(entry.path);
-
-//             if (!selectedFiles || selectedFiles.has(normalizedPath)) {
-//                 const normalizedPath = normalizePath(entry.path);
-
-//                 foundPaths.push(normalizedPath);
-//                 selectedFiles?.delete(normalizedPath);
-//                 const savePath = path.join(repoDest, normalizedPath);
-
-//                 fs.mkdirSync(path.dirname(savePath), { recursive: true });
-
-//                 entry.pipe(fs.createWriteStream(savePath).on("finish", () => {
-//                     // if we've found all the selected files, end the stream:
-//                     if (selectedFiles && selectedFiles.size === 0) {
-//                         body.destroy();
-//                     }
-//                 }));
-//             }
-
-//             entry.resume();
-//         })
-// );
+try {
+    await pipeline(
+        body,
+        tar.extract({
+            cwd: ".tmp/",
+            strip: 1,
+            filter(path) {
+                path = path.slice(path.indexOf("/") + 1).toLowerCase();
+                console.log(path);
+                if (pathSet.has(path)) {
+                    pathSet.delete(path);
+                    return true;
+                }
+                return false;
+            },
+            onentry(entry) {
+                entry.on("end", () => {
+                    if (pathSet.size === 0) body.destroy();
+                });
+            },
+        })
+    );
+}
+catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+        console.log("yeap");
+    }
+}
