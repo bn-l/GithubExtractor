@@ -1,13 +1,15 @@
 
+import temporaryDirectory from "temp-dir";
+
 // name: github-dl
 // bin: gdl
+ 
 
-// Universal Return types
-// (stats - data)
-// conflicts - paths
-// list - path
-// didyoumean - {path: suggestion}[]
-// 
+// Update:
+// ------
+// No cache and delete temp folder when finished with it
+
+// !! Saved as 
 
 // cli:
 // ----
@@ -43,6 +45,7 @@
 
 
 // Todo:
+// Separate select files function that first checks if the file exists in the default location.
 // - Option to ignore overwrite warning (-i)
 // - Access token support. See: https://github.com/isaacs/github/issues/554#issuecomment-778255274
 //     and: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens

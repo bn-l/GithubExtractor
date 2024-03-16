@@ -27,8 +27,8 @@
     ],
     "rules": {
 
-        "typescript-sort-keys/string-enum": "error",
-        "typescript-sort-keys/interface": ["error", "asc", { "caseSensitive": true, "natural": true, "requiredFirst": true }],
+        // "typescript-sort-keys/string-enum": "error",
+        // "typescript-sort-keys/interface": ["error", "asc", { "caseSensitive": true, "natural": true, "requiredFirst": true }],
         
         "space-in-parens": ["error", "never"],
         "prefer-const": "off",
