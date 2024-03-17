@@ -1,28 +1,27 @@
 import "./shimSet.mjs";
-
 import { FileConflictError, MissingInJSONError, APIFetchError } from "./custom-errors.mjs";
 import { RegexPipe } from "./RegexPipe.mjs";
 
+import chalk from "chalk";
 import fastlev from "fastest-levenshtein";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
-import path from "node:path";
 import { pipeline } from "node:stream/promises";
-import { rimraf } from "rimraf";
 import tar from "tar";
 import temporaryDirectory from "temp-dir";
 import { request } from "undici";
 import pMap from "p-map";
 import { Minipass } from "minipass";
 import fsm from "fs-minipass";
+import path from "node:path";
 
 
 const { closest } = fastlev;
 
 type Typo = [original: string, correction: string];
 
-type ListResult = { status: "truncated" | "full"; repoList: string[] };
+type ListItem = { filePath: string; conflict: boolean };
 
 interface GHTreeReponse {
     sha: string;
@@ -41,6 +40,7 @@ interface GHTreeReponse {
 interface DownloadGitOptions {
     owner: string; 
     repo: string; 
+    highlightConflicts?: boolean;
     outputStream?: NodeJS.WritableStream;
     caseInsensitive?: boolean; 
     cacheDir?: string;
@@ -53,29 +53,35 @@ interface BaseReposResponse {
     default_branch: string;
 }
 
+const CONFLICT_COLOR = chalk.hex("#d20f39");
+
+
 export class DownloadGit {
 
     public cacheDir: string;
     public caseInsensitive: DownloadGitOptions["caseInsensitive"] = false;
+    public highlightConflicts: DownloadGitOptions["highlightConflicts"] = true;
     public owner: DownloadGitOptions["owner"];
     public repo: DownloadGitOptions["repo"];
     public selectedPaths: DownloadGitOptions["selectedPaths"];
     public tarFilePath: string;
     public tarUrl: string;
+    
 
     protected defaultBranch: DownloadGitOptions["defaultBranch"];
     protected mute: boolean = false;
     protected outputStream: DownloadGitOptions["outputStream"];
     
     
-    protected repoList: string[] | undefined;
+    protected repoList: ListItem[] | undefined;
     
 
     constructor(
-        { caseInsensitive, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl, outputStream }: DownloadGitOptions
+        { caseInsensitive, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl, outputStream, highlightConflicts }: DownloadGitOptions
     ) {
 
         this.outputStream = outputStream;
+        this.highlightConflicts = highlightConflicts;
 
         if (caseInsensitive) this.caseInsensitive = caseInsensitive;
         this.cacheDir = cacheDir ?? path.resolve(temporaryDirectory, "gitdownloads", repo);
@@ -148,16 +154,14 @@ export class DownloadGit {
         return { body, controller };
     }
 
-    protected async handleTypos(): Promise<Typo[]> {
+    protected async handleTypos(pathList: string[]): Promise<Typo[]> {
 
         if (!this.selectedPaths) return []; 
-
-        const fullList = await this.getRepoList();
 
         const typos: Typo[] = [];
         for (const original of this.selectedPaths.values()) {
 
-            const correction = closest(original, fullList);
+            const correction = closest(original, pathList);
             typos.push([original, correction]);
         }
         return typos;
@@ -166,6 +170,7 @@ export class DownloadGit {
     public async downloadTo(dest: string) {
 
         const { controller, body } = await this.getRequestBody();
+        const internalList: string[] = [];
 
         try {
             await pipeline(
@@ -175,6 +180,8 @@ export class DownloadGit {
                     strip: 1,
                     filter: (path) => {
                         path = this.normalizeTarPath(path);
+                        internalList.push(path);
+
                         if (!path || (this.selectedPaths && !this.selectedPaths.has(path))) {
                             return false;
                         }
@@ -192,44 +199,28 @@ export class DownloadGit {
             );
 
             // if we still haven't struck out all the paths, there might be typos
-            return this.selectedPaths?.size ? this.handleTypos() : [];
+            return this.selectedPaths?.size ? this.handleTypos(internalList) : [];
         }
         catch (error) {
-        
             if (error instanceof Error && error.name === "AbortError") {
                 // Only one way to get to AbortError--successfully got selected files.
+                return [];
             }
-            else if (error instanceof Error) {
-
-                const cust = new Error(`Error extracting from github to ${ dest }. Message: ${ error.message }`);
-                
-                cust.stack = error.stack ?? "undefined";
-                throw cust;
+            else {
+                throw error;
             }
-            throw error;
-
         }
         finally {
             body.destroy();
         }
     }
 
-    public async get(dest: string): Promise<string[]> {
+    public async getDirContents(dir: string): Promise<Set<string>> {
 
-        this.mute = true;
-        const repoList = await this.getRepoList();
-        this.mute = false;
+        const dirEnts = await fsp.readdir(dir, { withFileTypes: true });
+        const slashedDirs = dirEnts.map(ent => ent.isDirectory() ? ent.name + "/" : ent.name);
 
-        let repoSet = this.selectedPaths ?? new Set(repoList);
-        repoSet = this.normalizePathSet(repoSet);
-
-        const destEnts = await fsp.readdir(dest, { withFileTypes: true });
-        const slashedDirs = destEnts.map(ent => ent.isDirectory() ? ent.name + "/" : ent.name);
-        let destSet = new Set(slashedDirs);
-        destSet = this.normalizePathSet(destSet);
-
-        const conflicts = Array.from(repoSet.intersection(destSet));
-        conflicts.sort((a, b) => {
+        slashedDirs.sort((a, b) => {
             if (a.endsWith("/") && !b.endsWith("/")) {
                 return -1;
             }
@@ -239,33 +230,50 @@ export class DownloadGit {
             return a.localeCompare(b);
         });
 
-        return conflicts;
+        return new Set(slashedDirs);
     }
    
+    protected writeListItem(listItem: ListItem) {
+        if (listItem.conflict && this.highlightConflicts) {
+            this.outputStream?.write(CONFLICT_COLOR(listItem.filePath));
+        }
+        else {
+            this.outputStream?.write(listItem.filePath);
+        }
+    }
 
-    public async getRepoList(conflictsOnly = false): Promise<string[]> {
-
-        // list conflicts in red
-        // add conflicts to array.
+    public async getRepoList(
+        { dest, conflictsOnly = false }: 
+        { dest: string; conflictsOnly?: boolean }
+    ): Promise<ListItem[]> {
 
         if (this.repoList) return this.repoList;
+        
+        const repoList: ListItem[] = [];
+        
+        let destSet: Set<string> | undefined;
+        if (dest) {
+            destSet = await this.getDirContents(dest);
+            destSet = this.normalizePathSet(destSet);
+        }
 
-        const repoList: string[] = [];
+        const handleEntry = (entry: tar.ReadEntry) => {
+
+            const filePath = this.normalizeTarPath(entry.path);
+            if (!filePath) return; 
+
+            const conflict = !!destSet?.has(filePath);
+            const listItem: ListItem = { filePath, conflict };
+
+            if (!conflictsOnly || conflict) {
+                repoList?.push(listItem);
+                this.writeListItem(listItem);
+            }
+        };
 
         const { body } = await this.getRequestBody();
 
-        await pipeline(
-            body,
-            tar.list({
-                onentry: (entry) => {
-                    const filePath = this.normalizeTarPath(entry.path);
-                    if (filePath) {
-                        if (!this.mute) this.outputStream?.write(filePath + "\n");
-                        repoList.push(filePath);
-                    }
-                },
-            })
-        );
+        await pipeline(body, tar.list({ onentry: handleEntry }));
 
         return this.repoList = repoList;
     }
@@ -274,7 +282,7 @@ export class DownloadGit {
 // add getStreamingApiResponse and streaming list method.
 // stdout itself is a writestream
 
-// ! move conflicts into list
+// ! remove temp folder stuff
 
 const d = new DownloadGit({
     owner: "facebook",
@@ -285,9 +293,9 @@ const d = new DownloadGit({
 
 const t0 = performance.now();
 
-const conflicts = await d.getConflicts(".tmp");
+const list = await d.getRepoList({ dest: "./.tmp" });
 
 console.log(`Time overall: ${ performance.now() - t0 }`);
-console.log(conflicts);
-console.log(conflicts.length);
+// console.log(conflicts);
+console.log(list.length);
 
