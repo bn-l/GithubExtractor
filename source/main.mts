@@ -14,6 +14,10 @@ import temporaryDirectory from "temp-dir";
 // Will only cache the tar and will check if it exists before downloading
 // uses the dest property
 
+// Update 2:
+// ----------
+// - Add recursive option to list option
+// - remove unused set shims
 
 // !! Saved as 
 

@@ -1,6 +1,7 @@
 import "./shimSet.mjs";
 
 import { FileConflictError, MissingInJSONError, APIFetchError } from "./custom-errors.mjs";
+import { RegexPipe } from "./RegexPipe.mjs";
 
 import fastlev from "fastest-levenshtein";
 import crypto from "node:crypto";
@@ -38,9 +39,9 @@ interface GHTreeReponse {
 }
 
 interface DownloadGitOptions {
-    dest: string; 
     owner: string; 
     repo: string; 
+    outputStream?: NodeJS.WritableStream;
     caseInsensitive?: boolean; 
     cacheDir?: string;
     selectedPaths?: Set<string>; 
@@ -56,35 +57,40 @@ export class DownloadGit {
 
     public cacheDir: string;
     public caseInsensitive: DownloadGitOptions["caseInsensitive"] = false;
-    public dest: DownloadGitOptions["dest"];
     public owner: DownloadGitOptions["owner"];
     public repo: DownloadGitOptions["repo"];
     public selectedPaths: DownloadGitOptions["selectedPaths"];
     public tarFilePath: string;
-    public tarUrl: DownloadGitOptions["tarUrl"];
+    public tarUrl: string;
 
     protected defaultBranch: DownloadGitOptions["defaultBranch"];
-    protected repoList: ListResult | undefined;
+    protected mute: boolean = false;
+    protected outputStream: DownloadGitOptions["outputStream"];
+    
+    
+    protected repoList: string[] | undefined;
     
 
     constructor(
-        { caseInsensitive, dest, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl }: DownloadGitOptions
+        { caseInsensitive, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl, outputStream }: DownloadGitOptions
     ) {
+
+        this.outputStream = outputStream;
 
         if (caseInsensitive) this.caseInsensitive = caseInsensitive;
         this.cacheDir = cacheDir ?? path.resolve(temporaryDirectory, "gitdownloads", repo);
         this.defaultBranch = defaultBranch;
 
-        if (selectedPaths) this.selectedPaths = this.normalizePathSet(selectedPaths);
+        if (selectedPaths) {
+            this.selectedPaths = this.normalizePathSet(selectedPaths);
+        }
 
-        this.tarUrl = tarUrl;
-        
-        this.dest = dest;
+        this.tarUrl = tarUrl ?? `https://github.com/${ owner }/${ repo }/archive/refs/heads/master.tar.gz`;
+
         this.owner = owner;
         this.repo = repo;
 
         fs.mkdirSync(this.cacheDir, { recursive: true });
-        fs.mkdirSync(this.dest, { recursive: true });
 
         this.tarFilePath = path.join(this.cacheDir, `${ repo }.tar.gz`);
     }
@@ -92,29 +98,32 @@ export class DownloadGit {
     protected normalizeTarPath(tarPath: string) {
         // someprefixdir/somefile.txt -> somefile.txt
         return this.caseInsensitive ?
-            tarPath.slice(tarPath.indexOf("/") + 1).toLowerCase() :
-            tarPath.slice(tarPath.indexOf("/") + 1);
+            tarPath.slice(tarPath.indexOf("/") + 1).toLowerCase().trim() :
+            tarPath.slice(tarPath.indexOf("/") + 1).trim();
     }
 
     protected normalizeFilePath(filePath: string) {
-        return this.caseInsensitive ? filePath.toLowerCase() : filePath;
+        return this.caseInsensitive ? filePath.toLowerCase().trim() : filePath.trim();
     }
 
     protected normalizePathSet(filePathSet: Set<string>) {
-        const valueArray = Array.from(filePathSet.values());
-        const normalized = valueArray.map(filePath => this.normalizeFilePath(filePath));
+
+        const values = Array.from(filePathSet.values());
+        const normalized = values.map(filePath => this.normalizeFilePath(filePath));
         return new Set(normalized);
     }
 
-    protected async getApiResponse<TResponseObject extends object>(endpoint: string, expectedTopLevel: string[]) {
+    
+    protected async getRequestBody() {
         
-        const t0 = performance.now();
+        const controller = new AbortController();
 
-        const { statusCode, headers, body } = await request(endpoint, {
+        const { statusCode, headers, body } = await request(this.tarUrl, {
+            signal: controller.signal,
             maxRedirections: 5, 
             headers: {
-                "cache-control": "no-cache",
-                "pragma": "no-cache",
+                // "cache-control": "no-cache",
+                // "pragma": "no-cache",
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             },
         });
@@ -133,84 +142,46 @@ export class DownloadGit {
                 throw new APIFetchError("Rate limit exceeded" + (resetIn ? `Please wait ${ wait } minutes` : ""));
             }
 
-            throw new APIFetchError(`Error getting response from: ${ endpoint } StatusCode: ${ statusCode } Headers: ${ JSON.stringify(headers) }, Body: ${ (await body.text()).slice(0, 2000) }`);
+            throw new APIFetchError(`Error getting response from github StatusCode: ${ statusCode } Headers: ${ JSON.stringify(headers) }, Body: ${ (await body.text()).slice(0, 2000) }`);
         }
 
-        let text = await body.text();
-
-        try {
-            const parsed = JSON.parse(text) as TResponseObject;
-
-            if (!expectedTopLevel.every(key => key in parsed)) {
-                throw new MissingInJSONError(`Could not find: ${ expectedTopLevel.join(", ") }, in json returned from: ${ endpoint }`);
-            }
-
-            console.log(`${ performance.now() - t0 }ms to get response from ${ endpoint }`);
-            
-            return parsed;
-        }
-        catch (error) {
-            throw error;
-        }
-    }
- 
-    protected async getDefaultBranch() {
-
-        if (this.defaultBranch) return this.defaultBranch;
-
-        const url = `https://api.github.com/repos/${ this.owner }/${ this.repo }`;
-        
-        const { default_branch } = await this.getApiResponse<BaseReposResponse>(url, ["default_branch"]);
-
-        return this.defaultBranch = default_branch;
-    }
-
-    protected async getTarUrl() {
-        if (this.tarUrl) return this.tarUrl;
-
-        const defaultBranch = await this.getDefaultBranch();
-        const url = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/${ defaultBranch }.tar.gz`;
-
-        return this.tarUrl = url;
+        return { body, controller };
     }
 
     protected async handleTypos(): Promise<Typo[]> {
 
-        if (!this.selectedPaths) return [];
+        if (!this.selectedPaths) return []; 
 
-        const { repoList } = await this.getRepoList();
+        const fullList = await this.getRepoList();
 
         const typos: Typo[] = [];
         for (const original of this.selectedPaths.values()) {
 
-            const correction = closest(original, repoList);
+            const correction = closest(original, fullList);
             typos.push([original, correction]);
         }
         return typos;
     }
 
-    public async downloadIntoDest() {
+    public async downloadTo(dest: string) {
 
-        const tarurl = await this.getTarUrl();
-        const controller = new AbortController();
-        const { statusCode, headers, body } = await request(tarurl, { maxRedirections: 5, signal: controller.signal });
+        const { controller, body } = await this.getRequestBody();
 
         try {
             await pipeline(
                 body, 
                 tar.extract({
-                    cwd: this.dest,
+                    cwd: dest,
                     strip: 1,
                     filter: (path) => {
                         path = this.normalizeTarPath(path);
-                        if (this.selectedPaths?.has(path)) {
-                            this.selectedPaths.delete(path);
-                            return true;
+                        if (!path || (this.selectedPaths && !this.selectedPaths.has(path))) {
+                            return false;
                         }
-                        return false;
+                        this.selectedPaths?.delete(path);
+                        return true;
                     },
                     onentry: (entry) => {
-
                         entry.on("end", () => {
                             if (this.selectedPaths?.size === 0) {
                                 controller.abort();
@@ -220,17 +191,17 @@ export class DownloadGit {
                 })
             );
 
-            return [];
+            // if we still haven't struck out all the paths, there might be typos
+            return this.selectedPaths?.size ? this.handleTypos() : [];
         }
         catch (error) {
         
             if (error instanceof Error && error.name === "AbortError") {
-                // if we still haven't struck out all the paths, there might be typos
-                if (this.selectedPaths?.size) return this.handleTypos();
+                // Only one way to get to AbortError--successfully got selected files.
             }
             else if (error instanceof Error) {
 
-                const cust = new Error(`Error extracting ${ tarurl } to ${ this.cacheDir }. Message: ${ error.message }, statusCode: ${ statusCode }, headers: ${ JSON.stringify(headers) }`);
+                const cust = new Error(`Error extracting from github to ${ dest }. Message: ${ error.message }`);
                 
                 cust.stack = error.stack ?? "undefined";
                 throw cust;
@@ -239,60 +210,84 @@ export class DownloadGit {
 
         }
         finally {
-
             body.destroy();
-            await rimraf(this.tarFilePath, { preserveRoot: true });
         }
     }
 
-    public async getConflicts() {
-        
-        const { repoList } = await this.getRepoList();
+    public async get(dest: string): Promise<string[]> {
 
-        let repoSet = new Set(this.selectedPaths ?? repoList);
+        this.mute = true;
+        const repoList = await this.getRepoList();
+        this.mute = false;
+
+        let repoSet = this.selectedPaths ?? new Set(repoList);
         repoSet = this.normalizePathSet(repoSet);
 
-        let destSet = new Set(await fsp.readdir(this.dest));
+        const destEnts = await fsp.readdir(dest, { withFileTypes: true });
+        const slashedDirs = destEnts.map(ent => ent.isDirectory() ? ent.name + "/" : ent.name);
+        let destSet = new Set(slashedDirs);
         destSet = this.normalizePathSet(destSet);
 
-        const conflicts = repoSet.intersection(destSet);
+        const conflicts = Array.from(repoSet.intersection(destSet));
+        conflicts.sort((a, b) => {
+            if (a.endsWith("/") && !b.endsWith("/")) {
+                return -1;
+            }
+            if (!a.endsWith("/") && b.endsWith("/")) {
+                return 1;
+            }
+            return a.localeCompare(b);
+        });
 
         return conflicts;
     }
+   
 
-    public async getRepoList(): Promise<ListResult> {
+    public async getRepoList(conflictsOnly = false): Promise<string[]> {
+
+        // list conflicts in red
+        // add conflicts to array.
 
         if (this.repoList) return this.repoList;
 
-        const defaultBranch = await this.getDefaultBranch();
+        const repoList: string[] = [];
 
-        const endpoint = `https://api.github.com/repos/${ this.owner }/${ this.repo }/git/trees/${ defaultBranch }?recursive=1`;
-        
-        const { tree, truncated } = await this.getApiResponse<GHTreeReponse>(endpoint, ["tree"]);
+        const { body } = await this.getRequestBody();
 
-        const repoList = tree.map(({ path }) => path);
+        await pipeline(
+            body,
+            tar.list({
+                onentry: (entry) => {
+                    const filePath = this.normalizeTarPath(entry.path);
+                    if (filePath) {
+                        if (!this.mute) this.outputStream?.write(filePath + "\n");
+                        repoList.push(filePath);
+                    }
+                },
+            })
+        );
 
-        return this.repoList = { status: truncated ? "truncated" : "full", repoList };
+        return this.repoList = repoList;
     }
 }
 
 // add getStreamingApiResponse and streaming list method.
 // stdout itself is a writestream
 
+// ! move conflicts into list
 
 const d = new DownloadGit({
-    dest: ".tmp",
-    owner: "sindresorhus",
-    repo: "ky",
-    selectedPaths: new Set([".cron.yml"]),
+    owner: "facebook",
+    repo: "react",
+    // outputStream: process.stdout,
+    // selectedPaths: new Set([".cron.yml"]),
 });
 
 const t0 = performance.now();
 
-const { repoList, status } = await d.getRepoList();
-
-console.log(status, repoList.length);
+const conflicts = await d.getConflicts(".tmp");
 
 console.log(`Time overall: ${ performance.now() - t0 }`);
+console.log(conflicts);
+console.log(conflicts.length);
 
-// sindresorhus ky ~ 803 ms

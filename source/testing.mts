@@ -4,13 +4,14 @@ import fs from "node:fs";
 import logUpdate from "log-update";
 import { simpleGit } from "simple-git";
 import zlib from "node:zlib";
+import { rimraf } from "rimraf";
 
 
 // !! If main doesn't work try master
 
-const repourl = "https://github.com/vuejs/devtools";
+const repourl = "https://github.com/facebook/react";
 
-const tarurl = repourl + "/archive/refs/heads/master.tar.gz"; 
+const tarurl = repourl + "/archive/refs/heads/main.tar.gz"; 
 
 const files: string[] = [];
 
@@ -19,11 +20,13 @@ fs.mkdirSync(cwd, { recursive: true });
 
 const extractor = tar.extract({ cwd });
 
-const res = await mfhfetch(tarurl);
 
 // Test fast ending when found file
 
 let t0 = performance.now();
+
+const res = await mfhfetch(tarurl);
+
 await new Promise((resolve, reject) => {
     if (res.status !== 200) {
         console.error("Failed to fetch tarball, status code: ", res.status, res.statusText);
@@ -52,6 +55,8 @@ const git = simpleGit({ baseDir: cwd });
 //     });
 
 
-// t0 = performance.now();
-// await git.clone("https://github.com/npm/minipass-fetch", "devtools", [ "--depth", "1" ]);
-// console.log("Cloning took: ", performance.now() - t0);
+t0 = performance.now();
+await git.clone("https://github.com/facebook/react", "kyclone", [ "--depth", "1" ]);
+console.log("Cloning took: ", performance.now() - t0);
+
+await rimraf("./.tmp/*", { glob: true });

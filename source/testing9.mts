@@ -21,6 +21,8 @@ const foundPaths: string[] = []; // used to find nonexistant (and maybe typo) pa
 
 const tarurl = "https://github.com/rhysd/vim.wasm/archive/refs/heads/wasm.tar.gz";
 
+// https://codeload.github.com/rhysd/vim.wasm/tar.gz/wasm
+
 const ac = new AbortController();
 const { signal } = ac;
 

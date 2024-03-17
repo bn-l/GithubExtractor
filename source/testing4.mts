@@ -55,3 +55,6 @@ catch (error) {
         console.log("yeap");
     }
 }
+
+
+// https://github.com/WaterfoxCo/Waterfox/archive/refs/heads/current.tar.gz

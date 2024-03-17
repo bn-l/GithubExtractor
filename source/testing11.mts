@@ -10,22 +10,6 @@ import { rimraf } from "rimraf";
 import { Minipass } from "minipass";
 
 
-const owner = "rhysd";
-const repo = "vim.wasm";
-const defaultBranch = "wasm";
-
-const endpoint = `https://api.github.com/repos/${ owner }/${ repo }/git/trees/${ defaultBranch }?recursive=1`;
-
-const { statusCode, headers, body } = await request(endpoint, {
-    maxRedirections: 5, 
-    headers: {
-        "cache-control": "no-cache",
-        "pragma": "no-cache",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    },
-});
-
-
 export class RegexPipe extends Minipass<string, string> {
     
     public regex: RegExp;
@@ -83,19 +67,38 @@ void collecter.collect().then(all => {
     console.log(all.length);
 });
 
+const owner = "rhysd";
+const repo = "vim.wasm";
+const defaultBranch = "wasm";
+
+const endpoint = `https://api.github.com/repos/${ owner }/${ repo }/git/trees/${ defaultBranch }?recursive=1`;
+
+const t0 = performance.now();
+
+const { statusCode, headers, body } = await request(endpoint, {
+    maxRedirections: 5, 
+    headers: {
+        "cache-control": "no-cache",
+        "pragma": "no-cache",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    },
+});
+
+
+const m = new Minipass<string>({ encoding: "utf8" });
+
+const allPaths: string[] = [];
+
+m.on("data", (chunk) => {
+    allPaths.push(...chunk.split("\n").filter(c => Boolean(c.trim())));
+    // console.log(chunk.split("\n"));
+});
 
 await pipeline(
     body,
     regexPipe,
-    fs.createWriteStream(".tmp/list-regex.txt")
+    m
 );
- 
 
-// await collecter.concat().then(onebigchunk => {
-//     // onebigchunk is a string if the stream
-//     // had an encoding set, or a buffer otherwise.
-// });
-
-// console.log(allPaths);
-// console.log(allPaths.length);
-
+console.log(performance.now() - t0);
+console.log(allPaths.length);
