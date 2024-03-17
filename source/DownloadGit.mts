@@ -277,6 +277,7 @@ export class DownloadGit {
 }
 
 // add getStreamingApiResponse and streaming list method.
+// stdout itself is a writestream
 
 
 const d = new DownloadGit({
