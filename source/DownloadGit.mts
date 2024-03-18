@@ -46,7 +46,6 @@ interface DownloadGitOptions {
     cacheDir?: string;
     selectedPaths?: Set<string>; 
     defaultBranch?: string; 
-    tarUrl?: string;
 }
 
 interface BaseReposResponse {
@@ -60,24 +59,23 @@ export class DownloadGit {
 
     public cacheDir: string;
     public caseInsensitive: DownloadGitOptions["caseInsensitive"] = false;
+    public debug: boolean = true;
     public highlightConflicts: DownloadGitOptions["highlightConflicts"] = true;
     public owner: DownloadGitOptions["owner"];
     public repo: DownloadGitOptions["repo"];
     public selectedPaths: DownloadGitOptions["selectedPaths"];
-    public tarFilePath: string;
-    public tarUrl: string;
-    
+    public tarFilePath: string;    
 
     protected defaultBranch: DownloadGitOptions["defaultBranch"];
+    protected getTarUrl: (defaultBranch: string) => string;
     protected mute: boolean = false;
     protected outputStream: DownloadGitOptions["outputStream"];
     
     
     protected repoList: ListItem[] | undefined;
-    
 
     constructor(
-        { caseInsensitive, owner, repo, selectedPaths, cacheDir, defaultBranch, tarUrl, outputStream, highlightConflicts }: DownloadGitOptions
+        { caseInsensitive, owner, repo, selectedPaths, cacheDir, defaultBranch, outputStream, highlightConflicts }: DownloadGitOptions
     ) {
 
         this.outputStream = outputStream;
@@ -91,8 +89,10 @@ export class DownloadGit {
             this.selectedPaths = this.normalizePathSet(selectedPaths);
         }
 
-        this.tarUrl = tarUrl ?? `https://github.com/${ owner }/${ repo }/archive/refs/heads/master.tar.gz`;
-
+        // this.getTarUrl = (defaultBranch) => `https://codeload.github.com/${ owner }/${ repo }/archive/refs/heads/${ defaultBranch }.tar.gz`;
+        // this.getTarUrl = (defaultBranch) => `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`;
+        this.getTarUrl = (defaultBranch) => "https://github.com/facebook/react/archive/refs/heads/master.tar.gz";
+        
         this.owner = owner;
         this.repo = repo;
 
@@ -118,13 +118,12 @@ export class DownloadGit {
         const normalized = values.map(filePath => this.normalizeFilePath(filePath));
         return new Set(normalized);
     }
-
     
-    protected async getRequestBody() {
+    protected async getRequestBody(url: string) {
         
         const controller = new AbortController();
 
-        const { statusCode, headers, body } = await request(this.tarUrl, {
+        const { statusCode, headers, body } = await request(url, {
             signal: controller.signal,
             maxRedirections: 5, 
             headers: {
@@ -148,10 +147,23 @@ export class DownloadGit {
                 throw new APIFetchError("Rate limit exceeded" + (resetIn ? `Please wait ${ wait } minutes` : ""));
             }
 
-            throw new APIFetchError(`Error getting response from github StatusCode: ${ statusCode } Headers: ${ JSON.stringify(headers) }, Body: ${ (await body.text()).slice(0, 2000) }`);
+            throw new APIFetchError(`Error getting response from github StatusCode: ${ statusCode }. ` + (this.debug ? `Url:${ url }\nHeaders:\n${ JSON.stringify(headers, null, 2) },\nBody:\n${ (await body.text()).slice(0, 2000) }` : ""));
         }
 
         return { body, controller };
+    }
+
+    protected async getDefaultBranch(): Promise<string | undefined> {
+
+        if (this.defaultBranch) return this.defaultBranch;
+
+        const reposUrl = `https://api.github.com/repos/${ this.owner }/${ this.repo }`;
+
+        const { body } = await this.getRequestBody(reposUrl);
+        
+        const json = await body.json() as { default_branch: string } | undefined;
+
+        return this.defaultBranch = json?.default_branch;
     }
 
     protected async handleTypos(pathList: string[]): Promise<Typo[]> {
@@ -167,10 +179,17 @@ export class DownloadGit {
         return typos;
     }
 
-    public async downloadTo(dest: string) {
+    public async downloadTo({ dest }: { dest: string }) {
 
-        const { controller, body } = await this.getRequestBody();
+        const t0 = performance.now();
+
+        // const defaultBranch = await this.getDefaultBranch() ?? "master";
+        const { controller, body } = await this.getRequestBody(this.getTarUrl(""));
         const internalList: string[] = [];
+
+        console.log("Fetching took: ", performance.now() - t0);
+
+        const t1 = performance.now();
 
         try {
             await pipeline(
@@ -197,6 +216,8 @@ export class DownloadGit {
                     },
                 })
             );
+
+            console.log("Extracting took: ", performance.now() - t1);
 
             // if we still haven't struck out all the paths, there might be typos
             return this.selectedPaths?.size ? this.handleTypos(internalList) : [];
@@ -271,7 +292,8 @@ export class DownloadGit {
             }
         };
 
-        const { body } = await this.getRequestBody();
+        const defaultBranch = await this.getDefaultBranch() ?? "master";
+        const { body } = await this.getRequestBody(this.getTarUrl(defaultBranch));
 
         await pipeline(body, tar.list({ onentry: handleEntry }));
 
@@ -284,18 +306,18 @@ export class DownloadGit {
 
 // ! remove temp folder stuff
 
+// Taking so long because request to tar/master requires a costly redirect 
+//  Just get default?
+
 const d = new DownloadGit({
-    owner: "facebook",
-    repo: "react",
+    owner: "bn-l",
+    repo: "templates",
     // outputStream: process.stdout,
     // selectedPaths: new Set([".cron.yml"]),
 });
 
 const t0 = performance.now();
 
-const list = await d.getRepoList({ dest: "./.tmp" });
+const list = await d.downloadTo({ dest: "./.tmp" });
 
-console.log(`Time overall: ${ performance.now() - t0 }`);
-// console.log(conflicts);
-console.log(list.length);
-
+console.log(performance.now() - t0);

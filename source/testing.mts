@@ -23,19 +23,19 @@ const extractor = tar.extract({ cwd });
 
 // Test fast ending when found file
 
-let t0 = performance.now();
+// let t0 = performance.now();
 
-const res = await mfhfetch(tarurl);
+// const res = await mfhfetch(tarurl);
 
-await new Promise((resolve, reject) => {
-    if (res.status !== 200) {
-        console.error("Failed to fetch tarball, status code: ", res.status, res.statusText);
-    }
-    else {
-        res.body.pipe(extractor).on("finish", resolve).on("error", reject);
-    }
-});
-console.log("Extracting took: ", performance.now() - t0);
+// await new Promise((resolve, reject) => {
+//     if (res.status !== 200) {
+//         console.error("Failed to fetch tarball, status code: ", res.status, res.statusText);
+//     }
+//     else {
+//         res.body.pipe(extractor).on("finish", resolve).on("error", reject);
+//     }
+// });
+// console.log("Extracting took: ", performance.now() - t0);
 
 const git = simpleGit({ baseDir: cwd });
 
@@ -55,8 +55,8 @@ const git = simpleGit({ baseDir: cwd });
 //     });
 
 
-t0 = performance.now();
-await git.clone("https://github.com/facebook/react", "kyclone", [ "--depth", "1" ]);
+const t0 = performance.now();
+await git.clone("https://github.com/bn-l/templates", "kyclone", [ "--depth", "1" ]);
 console.log("Cloning took: ", performance.now() - t0);
 
 await rimraf("./.tmp/*", { glob: true });
