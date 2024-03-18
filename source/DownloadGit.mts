@@ -1,4 +1,4 @@
-import "./shimSet.mjs";
+// import "./shimSet.mjs";
 import { FileConflictError, MissingInJSONError, APIFetchError } from "./custom-errors.mjs";
 import { RegexPipe } from "./RegexPipe.mjs";
 
@@ -40,7 +40,7 @@ export class DownloadGit {
 
     public caseInsensitive: DownloadGitOptions["caseInsensitive"] = false;
     public debug: boolean = true;
-    public highlightConflicts: DownloadGitOptions["highlightConflicts"] = true;
+    public highlightConflicts: boolean = true;
     public owner: DownloadGitOptions["owner"];
     public repo: DownloadGitOptions["repo"];
     public selectedPaths: DownloadGitOptions["selectedPaths"];
@@ -55,7 +55,7 @@ export class DownloadGit {
         this.owner = owner;
         this.repo = repo;
 
-        this.highlightConflicts = highlightConflicts;
+        if (highlightConflicts) this.highlightConflicts = highlightConflicts;
         this.outputStream = outputStream;
 
         if (caseInsensitive) this.caseInsensitive = caseInsensitive;
@@ -223,7 +223,7 @@ export class DownloadGit {
         }
     }
 
-    public async getDirContents(dir: string): Promise<Set<string>> {
+    public async getLocalDirContents(dir: string): Promise<Set<string>> {
 
         const dirEnts = await fsp.readdir(dir, { withFileTypes: true });
         const slashedDirs = dirEnts.map(ent => ent.isDirectory() ? ent.name + "/" : ent.name);
@@ -242,11 +242,12 @@ export class DownloadGit {
     }
    
     protected writeListItem(listItem: ListItem) {
+
         if (listItem.conflict && this.highlightConflicts) {
-            this.outputStream?.write(CONFLICT_COLOR(listItem.filePath));
+            this.outputStream?.write(CONFLICT_COLOR(listItem.filePath) + "\n");
         }
         else {
-            this.outputStream?.write(listItem.filePath);
+            this.outputStream?.write(listItem.filePath + "\n");
         }
     }
 
@@ -261,7 +262,7 @@ export class DownloadGit {
         
         let destSet: Set<string> | undefined;
         if (dest) {
-            destSet = await this.getDirContents(dest);
+            destSet = await this.getLocalDirContents(dest);
             destSet = this.normalizePathSet(destSet);
         }
 
@@ -287,18 +288,11 @@ export class DownloadGit {
     }
 }
 
-// add getStreamingApiResponse and streaming list method.
-// stdout itself is a writestream
-
-// ! remove temp folder stuff
-
-// Taking so long because request to tar/master requires a costly redirect 
-//  Just get default?
 
 const d = new DownloadGit({
     owner: "facebook",
     repo: "react",
-    // outputStream: process.stdout,
+    outputStream: process.stdout,
     // selectedPaths: new Set([".editorconfig"]),
 });
 
@@ -306,4 +300,4 @@ const t0 = performance.now();
 
 const list = await d.getRepoList({ dest: "./.tmp" });
 
-console.log(performance.now() - t0);
+// console.log(performance.now() - t0);
