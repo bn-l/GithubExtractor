@@ -1,20 +1,12 @@
 // import "./shimSet.mjs";
 import { FileConflictError, MissingInJSONError, APIFetchError } from "./custom-errors.mjs";
-import { RegexPipe } from "./RegexPipe.mjs";
 
 import chalk from "chalk";
 import fastlev from "fastest-levenshtein";
-import crypto from "node:crypto";
-import fs from "node:fs";
 import fsp from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import tar from "tar";
-import temporaryDirectory from "temp-dir";
 import { request } from "undici";
-import pMap from "p-map";
-import { Minipass } from "minipass";
-import fsm from "fs-minipass";
-import path from "node:path";
 
 
 const { closest } = fastlev;
