@@ -16,7 +16,7 @@ type Typo = [original: string, correction: string];
 type ListItem = { filePath: string; conflict: boolean };
 
 
-interface DownloadGitOptions {
+interface GithubExtractorOptions {
     owner: string; 
     repo: string; 
     highlightConflicts?: boolean;
@@ -28,20 +28,20 @@ interface DownloadGitOptions {
 const CONFLICT_COLOR = chalk.hex("#d20f39");
 
 
-export class DownloadGit {
+export class GithubExtractor {
 
-    public caseInsensitive: DownloadGitOptions["caseInsensitive"] = false;
+    public caseInsensitive: GithubExtractorOptions["caseInsensitive"] = false;
     public debug: boolean = true;
     public highlightConflicts: boolean = true;
-    public owner: DownloadGitOptions["owner"];
-    public repo: DownloadGitOptions["repo"];
-    public selectedPaths: DownloadGitOptions["selectedPaths"];
+    public owner: GithubExtractorOptions["owner"];
+    public repo: GithubExtractorOptions["repo"];
+    public selectedPaths: GithubExtractorOptions["selectedPaths"];
 
-    protected outputStream: DownloadGitOptions["outputStream"];
+    protected outputStream: GithubExtractorOptions["outputStream"];
     protected repoList: ListItem[] | undefined;
 
     constructor(
-        { owner, repo, highlightConflicts, outputStream, caseInsensitive, selectedPaths }: DownloadGitOptions
+        { owner, repo, highlightConflicts, outputStream, caseInsensitive, selectedPaths }: GithubExtractorOptions
     ) {
 
         this.owner = owner;
@@ -84,7 +84,7 @@ export class DownloadGit {
             const resetInDateNum = new Date(Number(resetIn)).getTime();
 
             const wait = !Number.isNaN(resetInDateNum) ? 
-                Math.ceil((resetInDateNum * 1000) - Date.now() / 1000 / 60) :
+                Math.ceil((resetInDateNum * 1000) - (Date.now() / 1000 / 60)) :
                 undefined;
 
             throw new APIFetchError("Rate limit exceeded" + (resetIn ? `Please wait ${ wait } minutes` : ""));
@@ -96,27 +96,22 @@ export class DownloadGit {
     protected async makeRequest(url: string) {
 
         const controller = new AbortController();
-        
-        try {
-            const { statusCode, headers, body } = await request(url, {
-                signal: controller.signal,
-                maxRedirections: 5, 
-                headers: {
-                    // "cache-control": "no-cache",
-                    // "pragma": "no-cache",
-                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                },
-            });
+    
+        const { statusCode, headers, body } = await request(url, {
+            signal: controller.signal,
+            maxRedirections: 5, 
+            headers: {
+                // "cache-control": "no-cache",
+                // "pragma": "no-cache",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            },
+        });
 
-            if (statusCode !== 200) {
-                await this.handleBadResponse({ statusCode, headers, body, controller, url });
-            }
+        if (statusCode !== 200) {
+            await this.handleBadResponse({ statusCode, headers, body, controller, url });
+        }
 
-            return { statusCode, headers, body, controller, url };
-        }
-        catch (error) {
-            throw error;
-        }
+        return { statusCode, headers, body, controller, url };
     }
 
 
@@ -126,22 +121,20 @@ export class DownloadGit {
         // If it's anything else, the second link will redirect to the right codeload.
         // (saves a tiny amount of waiting, reduces load a bit on github.com).
 
+        // https://stackoverflow.com/questions/60188254/how-is-codeload-github-com-different-to-api-github-com
+
         const firstTry = `https://codeload.github.com/${ this.owner }/${ this.repo }/tar.gz/main`;
         const secondTry = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/master.tar.gz`;
         
         let res: Awaited<ReturnType<typeof this.makeRequest>> | undefined = undefined;
 
-        try {
-            try { 
-                return await this.makeRequest(firstTry); 
-            }
-            catch (error) { 
-                return await this.makeRequest(secondTry);
-            }
+        try { 
+            return await this.makeRequest(firstTry); 
         }
-        catch (error) {
-            throw error;
+        catch (error) { 
+            return await this.makeRequest(secondTry);
         }
+
     }
 
 
@@ -281,15 +274,15 @@ export class DownloadGit {
 }
 
 
-const d = new DownloadGit({
-    owner: "facebook",
-    repo: "react",
-    outputStream: process.stdout,
-    // selectedPaths: new Set([".editorconfig"]),
-});
+// const d = new GithubExtractor({
+//     owner: "facebook",
+//     repo: "react",
+//     outputStream: process.stdout,
+//     // selectedPaths: new Set([".editorconfig"]),
+// });
 
-const t0 = performance.now();
+// const t0 = performance.now();
 
-const list = await d.getRepoList({ dest: "./.tmp" });
+// const list = await d.getRepoList({ dest: "./.tmp" });
 
 // console.log(performance.now() - t0);

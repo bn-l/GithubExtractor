@@ -1,10 +1,10 @@
 {
-  "name": "download-git",
+  "name": "github-extractor",
   "version": "0.0.1",
-  "description": "Download a repo very quickly or specific files and folders",
+  "description": "Github Extractor: List or download a whole repo or specific files and folders very quickly",
   "main": "./dist/source/main.js",
   "bin": {
-    "dlg": "./dist/source/main.mjs"
+    "ghe": "./dist/source/cli.mjs"
   },
   "files": [
     "dist/**/*"
@@ -12,48 +12,12 @@
   "type": "module",
   "scripts": {
     "start:dev": "ts-node",
-    "test": "npm run build && c8 ava",
+    "test": "vitest",
     "test:single": "npm run build && ava",
     "lint": "npx eslint source --ext .mts",
     "lint:strict": "npx eslint --config ./eslint-strict.json source --ext .mts",
     "build": "tsc --build --incremental",
     "build:clean": "rimraf ./dist && tsc --build"
-  },
-  "c8": {
-    "reporter": [
-      "html",
-      "lcov"
-    ],
-    "all": true,
-    "src": "./dist/source",
-    "extension": [
-      ".mjs",
-      ".js"
-    ],
-    "exclude": [
-      "**/tests/**",
-      "**/fixtures/**",
-      "./source/cli/helpText.mts"
-    ]
-  },
-  "ava": {
-    "failFast": true,
-    "files": [
-      "tests/**",
-      "!tests/fixtures/**"
-    ],
-    "typescript": {
-      "rewritePaths": {
-        "source/": "dist/source/",
-        "tests/": "dist/tests/"
-      },
-      "compile": false,
-      "extensions": [
-        "ts",
-        "tsx",
-        "mts"
-      ]
-    }
   },
   "keywords": [
     "cli",
@@ -83,24 +47,27 @@
     "@types/tar": "^6.1.11",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "c8": "^9.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-sonarjs": "^0.24.0",
     "eslint-plugin-sort-class-members": "^1.20.0",
     "eslint-plugin-typescript-sort-keys": "^3.2.0",
     "eslint-plugin-unicorn": "^51.0.1",
+    "faucet": "^0.0.4",
     "sinon": "^17.0.1",
-    "tap": "^18.7.1",
     "tinybench": "^2.6.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "typescript-eslint": "^7.1.0"
+    "typescript-eslint": "^7.1.0",
+    "vitest": "^1.4.0"
   },
   "dependencies": {
     "chalk": "^5.3.0",
     "fastest-levenshtein": "^1.0.16",
     "meow": "^13.2.0",
     "ora": "^8.0.1",
+    "tap": "^18.7.1",
     "tar": "^6.2.0",
     "undici": "^6.7.1"
   }

@@ -16,6 +16,8 @@
         "sourceType": "module",
         "project": true
     },
+    "ignorePatterns": 
+        ["tests"],
     "plugins": [
         "@typescript-eslint",
         "@stylistic/js",

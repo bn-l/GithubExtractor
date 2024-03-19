@@ -1,9 +1,13 @@
 
-import temporaryDirectory from "temp-dir";
-
 // name: github-dl
 // bin: gdl
- 
+
+// Names:
+// cli version: ghe
+// class version: github-extractor / GithubExtractor  
+
+
+// Separate cli package that imports this 
 
 // Update:
 // ------
