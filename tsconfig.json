@@ -47,7 +47,8 @@
     ],
     "include": [
         "source",
-        "tests",
+        "test",
+        "bench",
         "types"
     ],
     "plugins": [

@@ -36,9 +36,11 @@ export class GithubExtractor {
     public owner: GithubExtractorOptions["owner"];
     public repo: GithubExtractorOptions["repo"];
     public selectedPaths: GithubExtractorOptions["selectedPaths"];
-
+    
     protected outputStream: GithubExtractorOptions["outputStream"];
     protected repoList: ListItem[] | undefined;
+    protected requestFn: typeof request = request;
+    
 
     constructor(
         { owner, repo, highlightConflicts, outputStream, caseInsensitive, selectedPaths }: GithubExtractorOptions
@@ -76,42 +78,48 @@ export class GithubExtractor {
     }
 
 
-    protected async handleBadResponse(res: Awaited<ReturnType<typeof this.makeRequest>>, originalError?: Error): Promise<never> {
+    protected async handleBadResponseCode(res: Awaited<ReturnType<typeof this.makeRequest>>): Promise<never> {
 
         const { "x-ratelimit-remaining": remaining, "x-ratelimit-reset": resetIn } = res.headers;
 
-        if (remaining && Number(remaining) === 0) {
+        if (Number(remaining) === 0) {
             const resetInDateNum = new Date(Number(resetIn)).getTime();
 
-            const wait = !Number.isNaN(resetInDateNum) ? 
+            const wait = Number.isInteger(resetInDateNum) ? 
                 Math.ceil((resetInDateNum * 1000) - (Date.now() / 1000 / 60)) :
                 undefined;
 
-            throw new APIFetchError("Rate limit exceeded" + (resetIn ? `Please wait ${ wait } minutes` : ""));
+            throw new APIFetchError("Rate limit exceeded" + (wait ? `Please wait ${ wait } minutes` : ""));
         }
 
-        throw new APIFetchError(`Error getting response from github StatusCode: ${ res.statusCode }. ` + (this.debug ? `${ originalError ? "Error message:" + originalError.message : "" }, Url: ${ res.url }\nHeaders:\n${ JSON.stringify(res.headers, null, 2) },\nBody:\n${ (await res.body.text()).slice(0, 2000) }` : ""));
+        throw new APIFetchError(`Error getting response from github StatusCode: ${ res.statusCode }. ` + (this.debug ? `Url: ${ res.url }\nHeaders:\n${ JSON.stringify(res.headers, null, 2) },\nBody:\n${ (await res.body.text()).slice(0, 2000) }` : ""));
     }
 
     protected async makeRequest(url: string) {
 
         const controller = new AbortController();
-    
-        const { statusCode, headers, body } = await request(url, {
-            signal: controller.signal,
-            maxRedirections: 5, 
-            headers: {
-                // "cache-control": "no-cache",
-                // "pragma": "no-cache",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            },
-        });
+        
+        try {
+            const { statusCode, headers, body } = await this.requestFn(url, {
+                signal: controller.signal,
+                maxRedirections: 5, 
+                headers: {
+                    // "cache-control": "no-cache",
+                    // "pragma": "no-cache",
+                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                },
+            });
 
-        if (statusCode !== 200) {
-            await this.handleBadResponse({ statusCode, headers, body, controller, url });
+            if (statusCode !== 200) { 
+                await this.handleBadResponseCode({ statusCode, headers, body, controller, url });
+            }
+
+            return { statusCode, headers, body, controller, url };
         }
-
-        return { statusCode, headers, body, controller, url };
+        catch (error) {
+            // @ts-expect-error no guard
+            throw new APIFetchError(`Error getting ${ this.owner }/${ this.repo } from github: ${ error?.message }`);
+        }
     }
 
 
@@ -153,15 +161,9 @@ export class GithubExtractor {
 
     public async downloadTo({ dest }: { dest: string }) {
 
-        const t0 = performance.now();
-
         // const defaultBranch = await this.getDefaultBranch() ?? "master";
         const { body, controller } = await this.getTarBody();
         const internalList: string[] = [];
-
-        console.log("Fetching took: ", performance.now() - t0);
-
-        const t1 = performance.now();
 
         try {
             await pipeline(
@@ -189,8 +191,6 @@ export class GithubExtractor {
                 })
             );
 
-            console.log("Extracting took: ", performance.now() - t1);
-
             // if we still haven't struck out all the paths, there might be typos
             return this.selectedPaths?.size ? this.handleTypos(internalList) : [];
         }
@@ -211,7 +211,9 @@ export class GithubExtractor {
     public async getLocalDirContents(dir: string): Promise<Set<string>> {
 
         const dirEnts = await fsp.readdir(dir, { withFileTypes: true });
-        const slashedDirs = dirEnts.map(ent => ent.isDirectory() ? ent.name + "/" : ent.name);
+        const slashedDirs = dirEnts
+            .map(ent => ent.isDirectory() ? ent.name + "/" : ent.name)
+            .map(ent => this.normalizeFilePath(ent));
 
         slashedDirs.sort((a, b) => {
             if (a.endsWith("/") && !b.endsWith("/")) {
@@ -223,7 +225,8 @@ export class GithubExtractor {
             return a.localeCompare(b);
         });
 
-        return new Set(slashedDirs);
+        const dirSet = new Set(slashedDirs);
+        return dirSet;
     }
    
     protected writeListItem(listItem: ListItem) {
@@ -246,10 +249,7 @@ export class GithubExtractor {
         const repoList: ListItem[] = [];
         
         let destSet: Set<string> | undefined;
-        if (dest) {
-            destSet = await this.getLocalDirContents(dest);
-            destSet = this.normalizePathSet(destSet);
-        }
+        if (dest) destSet = await this.getLocalDirContents(dest);
 
         const handleEntry = (entry: tar.ReadEntry) => {
 
@@ -273,16 +273,3 @@ export class GithubExtractor {
     }
 }
 
-
-// const d = new GithubExtractor({
-//     owner: "facebook",
-//     repo: "react",
-//     outputStream: process.stdout,
-//     // selectedPaths: new Set([".editorconfig"]),
-// });
-
-// const t0 = performance.now();
-
-// const list = await d.getRepoList({ dest: "./.tmp" });
-
-// console.log(performance.now() - t0);
