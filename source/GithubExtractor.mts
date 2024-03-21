@@ -1,15 +1,15 @@
 // import "./shimSet.mjs";
-import { FileConflictError, MissingInJSONError, APIFetchError } from "./custom-errors.mjs";
+import { APIFetchError } from "./custom-errors.mjs";
 
 import chalk from "chalk";
-import fastlev from "fastest-levenshtein";
+import { closest } from "fastest-levenshtein";
 import fsp from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import tar from "tar";
 import { request } from "undici";
 
 
-const { closest } = fastlev;
+// const { closest } = fastlev;
 
 type Typo = [original: string, correction: string];
 
@@ -60,8 +60,9 @@ export class GithubExtractor {
     }
     
     protected normalizeTarPath(tarPath: string) {
-        // someprefixdir/somefile.txt -> somefile.txt
-        return this.caseInsensitive ?
+        // slice off everything after the "/":
+        //   someprefixdir/somefile.txt -> somefile.txt
+        return this.caseInsensitive ? 
             tarPath.slice(tarPath.indexOf("/") + 1).toLowerCase().trim() :
             tarPath.slice(tarPath.indexOf("/") + 1).trim();
     }
@@ -131,20 +132,18 @@ export class GithubExtractor {
 
         const firstTry = `https://codeload.github.com/${ this.owner }/${ this.repo }/tar.gz/main`;
         const secondTry = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/master.tar.gz`;
-        
-        let res: Awaited<ReturnType<typeof this.makeRequest>> | undefined = undefined;
 
         try { 
             return await this.makeRequest(firstTry); 
         }
-        catch (error) { 
+        catch { 
             return await this.makeRequest(secondTry);
         }
 
     }
 
 
-    protected async handleTypos(pathList: string[]): Promise<Typo[]> {
+    protected handleTypos(pathList: string[]): Typo[] {
 
         if (!this.selectedPaths) return []; 
 
@@ -191,10 +190,7 @@ export class GithubExtractor {
 
             // if we still haven't struck out all the paths, there might be typos
             return this.selectedPaths?.size ? this.handleTypos(internalList) : [];
-        }
-        catch (error) {
-            throw error;
-        }
+        } 
         finally {
             body.destroy();
         }
@@ -252,22 +248,26 @@ export class GithubExtractor {
             const listItem: ListItem = { filePath, conflict };
 
             if (!conflictsOnly || conflict) {
-                repoList?.push(listItem);
+                repoList.push(listItem);
                 this.writeListItem(listItem);
             }
         };
 
         const filter = (path: string) => {
-            // Length === 2 to account for pre normalization where the archive name isn't 
-            //  removed yet
-            return recursive || path.slice(1, -1).split("/").length === 2;
+            // Length <= 2 to account for pre normalization where the archive name isn't
+            //  isn't removed. So anything with more than two parts in the path is not first level.
+            // path.slice(1, -1): slice starting at 1 takes care of a "/" prefix,
+            //  ending at -1 removes trailing "/". Now if there's two members in the 
+            //  resulting array, we know it's a nested path
+            return recursive || path.slice(1, -1).split("/").length <= 2;
         };
 
         const { body } = await this.getTarBody();
 
         await pipeline(body, tar.list({ onentry: handleEntry, filter }));
 
-        return this.repoList = repoList;
+        this.repoList = repoList;
+        return repoList;
     }
 }
 
