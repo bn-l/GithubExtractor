@@ -2,16 +2,14 @@
   "name": "github-extractor",
   "version": "0.0.1",
   "description": "Github Extractor: List or download a whole repo or specific files and folders very quickly",
-  "main": "./dist/source/main.js",
-  "bin": {
-    "ghe": "./dist/source/cli.mjs"
-  },
+  "main": "./dist/source/index.mjs",
   "files": [
     "dist/**/*"
   ],
   "type": "module",
   "scripts": {
     "start:dev": "ts-node",
+    "bench": "vitest bench",
     "test": "vitest --bail=1 --run --coverage",
     "test:single": "vitest --bail=1 --coverage",
     "lint": "npx eslint source --ext .mts",
@@ -59,6 +57,7 @@
     "faucet": "^0.0.4",
     "msw": "^2.2.9",
     "rimraf": "^5.0.5",
+    "simple-git": "^3.23.0",
     "sinon": "^17.0.1",
     "tinybench": "^2.6.0",
     "ts-node": "^10.9.2",

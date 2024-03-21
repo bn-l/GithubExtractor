@@ -108,6 +108,36 @@ describe("makeRequest and handleBadResponse", () => {
         expect(fakeReqFn.firstCall.args[0]).toBe("someurl");
     });
 
+    it("should handle the reset number being unreconizable", async() => {
+
+        const fakeReqFn = sinon.fake.resolves({
+            statusCode: 404,
+            body: { text: sinon.fake.resolves("test") },
+            headers: {
+                "x-ratelimit-remaining": 0,
+                "x-ratelimit-reset": undefined,
+            },
+        });
+
+        const ghe = new GithubExtractor({
+            owner: TEST_OWNER,
+            repo: TEST_REPO,
+        });
+
+        ghe["requestFn"] = fakeReqFn;
+
+        try {
+            await ghe["makeRequest"]("someurl");
+        }
+        catch (error) {
+            expect(error).toBeInstanceOf(APIFetchError);
+            // @ts-expect-error testing
+            expect(error.message).toMatch(/Rate limit exceeded/i);
+        }
+
+        expect(fakeReqFn.firstCall.args[0]).toBe("someurl");
+    });
+
 
     it("should handle when request throws", async() => {
 

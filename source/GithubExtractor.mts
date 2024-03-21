@@ -30,9 +30,9 @@ const CONFLICT_COLOR = chalk.hex("#d20f39");
 
 export class GithubExtractor {
 
-    public caseInsensitive: GithubExtractorOptions["caseInsensitive"] = false;
-    public debug: boolean = true;
-    public highlightConflicts: boolean = true;
+    public caseInsensitive: GithubExtractorOptions["caseInsensitive"];
+    public debug: boolean = false;
+    public highlightConflicts: boolean;
     public owner: GithubExtractorOptions["owner"];
     public repo: GithubExtractorOptions["repo"];
     public selectedPaths: GithubExtractorOptions["selectedPaths"];
@@ -49,10 +49,10 @@ export class GithubExtractor {
         this.owner = owner;
         this.repo = repo;
 
-        if (highlightConflicts) this.highlightConflicts = highlightConflicts;
-        this.outputStream = outputStream;
+        this.highlightConflicts = highlightConflicts ?? true;
+        this.caseInsensitive = caseInsensitive ?? false;
 
-        if (caseInsensitive) this.caseInsensitive = caseInsensitive;
+        this.outputStream = outputStream;
 
         if (selectedPaths) {
             this.selectedPaths = this.normalizePathSet(selectedPaths);
@@ -110,9 +110,7 @@ export class GithubExtractor {
                 },
             });
 
-            if (statusCode !== 200) { 
-                await this.handleBadResponseCode({ statusCode, headers, body, controller, url });
-            }
+            if (statusCode !== 200) await this.handleBadResponseCode({ statusCode, headers, body, controller, url });
 
             return { statusCode, headers, body, controller, url };
         }
@@ -195,13 +193,7 @@ export class GithubExtractor {
             return this.selectedPaths?.size ? this.handleTypos(internalList) : [];
         }
         catch (error) {
-            if (error instanceof Error && error.name === "AbortError") {
-                // Only one way to get to AbortError--successfully got selected files.
-                return [];
-            }
-            else {
-                throw error;
-            }
+            throw error;
         }
         finally {
             body.destroy();
@@ -240,8 +232,8 @@ export class GithubExtractor {
     }
 
     public async getRepoList(
-        { dest, conflictsOnly = false }: 
-        { dest: string; conflictsOnly?: boolean }
+        { dest, conflictsOnly = false, recursive = false }: 
+        { dest: string; conflictsOnly?: boolean; recursive?: boolean }
     ): Promise<ListItem[]> {
 
         if (this.repoList) return this.repoList;
@@ -265,11 +257,25 @@ export class GithubExtractor {
             }
         };
 
+        const filter = (path: string) => {
+            // Length === 2 to account for pre normalization where the archive name isn't 
+            //  removed yet
+            return recursive || path.slice(1, -1).split("/").length === 2;
+        };
+
         const { body } = await this.getTarBody();
 
-        await pipeline(body, tar.list({ onentry: handleEntry }));
+        await pipeline(body, tar.list({ onentry: handleEntry, filter }));
 
         return this.repoList = repoList;
     }
 }
 
+
+const ghe = new GithubExtractor({ 
+    owner: "SCons", 
+    repo: "scons-examples",
+    outputStream: process.stdout,
+});
+
+await ghe.getRepoList({ dest: "test", recursive: false });

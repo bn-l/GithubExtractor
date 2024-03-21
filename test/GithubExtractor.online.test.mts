@@ -16,6 +16,9 @@ import { APIFetchError } from "../source/custom-errors.mjs";
 import { request } from "undici";
 import fs from "node:fs";
 
+import { Readable } from "node:stream";
+// import { SerializableErrror } from "tar"
+
 
 const TEST_OWNER = "octocat";
 const TEST_REPO = "Spoon-Knife";
@@ -61,10 +64,10 @@ afterAll(() => {
 
 describe.sequential("getTarBody", context => {
 
-    it("gets the tar immediately if the default branch is correct", async() => {
+    it("gets the tar immediately if the default branch is main", async() => {
 
         const owner = "octocat";
-        const repo = "Spoon-Knife";
+        const repo = "Spoon-Knife"; // main default branch
 
         const ghe = new GithubExtractor({ owner, repo });
 
@@ -82,10 +85,10 @@ describe.sequential("getTarBody", context => {
     });
 
     
-    it("Makes a second call if the default branch is incorrect then gets that correctly", async() => {
+    it("makes a second call if the default branch is not main then gets it correctly", async() => {
 
-        const owner = "rtyley";
-        const repo = "small-test-repo";
+        const owner = "octocat";
+        const repo = "Hello-World"; // master default branch
 
         const ghe = new GithubExtractor({ owner, repo });
 
@@ -103,7 +106,43 @@ describe.sequential("getTarBody", context => {
 
 describe.sequential("getRepoList", context => {
 
-    it("correctly lists a repo", async() => {
+    it("correctly lists a repo non recursively", async() => {
+
+        const owner = "octocat";
+        const repo = "octocat.github.io";
+
+        const outputStream = { write: sinon.fake() };
+
+        // @ts-expect-error testing
+        const ghe = new GithubExtractor({ owner, repo, outputStream });
+
+        await ghe.getRepoList({ dest: TEST_TEMP_DIR, recursive: true });
+
+        sinon.assert.calledWith(outputStream.write, "params.json\n");
+        sinon.assert.calledWith(outputStream.write, "javascripts/\n");
+
+        sinon.assert.neverCalledWith(outputStream.write, "main.js\n");
+        sinon.assert.neverCalledWith(outputStream.write, "blacktocat.png\n");
+    });
+
+    it("correctly lists a repo recursively", async() => {
+
+        const owner = "octocat";
+        const repo = "octocat.github.io";
+
+        const outputStream = { write: sinon.fake() };
+
+        // @ts-expect-error testing
+        const ghe = new GithubExtractor({ owner, repo, outputStream });
+
+        await ghe.getRepoList({ dest: TEST_TEMP_DIR, recursive: true });
+
+        sinon.assert.calledWith(outputStream.write, "images/icon_download.png\n");
+        sinon.assert.calledWith(outputStream.write, "stylesheets/github-light.css\n");
+
+    });
+
+    it("correctly returns cached list", async() => {
 
         const owner = "octocat";
         const repo = "Spoon-Knife";
@@ -114,13 +153,16 @@ describe.sequential("getRepoList", context => {
         const ghe = new GithubExtractor({ owner, repo, outputStream });
 
         await ghe.getRepoList({ dest: TEST_TEMP_DIR });
+        await ghe.getRepoList({ dest: TEST_TEMP_DIR });
 
         // @ts-expect-error testing
         sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
 
-        expect(outputStream.write.firstCall.args[0]).toBe("README.md\n");
-        expect(outputStream.write.secondCall.args[0]).toBe("index.html\n");
-        expect(outputStream.write.thirdCall.args[0]).toBe("styles.css\n");
+        expect(ghe["repoList"]).toStrictEqual([
+            { filePath: "README.md", conflict: false },
+            { filePath: "index.html", conflict: false },
+            { filePath: "styles.css", conflict: false },
+        ]);
     });
 
 
@@ -152,6 +194,76 @@ describe.sequential("getRepoList", context => {
 
     });
 
+    it("correctly only shows the conflicts when there are conflicts and conflictsOnly = true", async() => {
+
+        const owner = "octocat";
+        const repo = "Spoon-Knife";
+
+        fs.writeFileSync(`${ TEST_TEMP_DIR }/README.md`, "test");
+
+        const outputStream = { write: sinon.fake() };
+
+        // @ts-expect-error testing
+        const ghe = new GithubExtractor({ owner, repo, outputStream });
+
+        const fakeWriteListItem = sinon.fake();
+        ghe["writeListItem"] = fakeWriteListItem;
+
+        await ghe.getRepoList({ dest: TEST_TEMP_DIR, conflictsOnly: true });
+
+        // @ts-expect-error testing
+        sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
+
+        sinon.assert.calledOnceWithExactly(fakeWriteListItem, { filePath: "README.md", conflict: true });
+
+    });
+
+    it("correctly only shows the conflicts when there are conflicts and conflictsOnly = true", async() => {
+
+        const owner = "octocat";
+        const repo = "Spoon-Knife";
+
+        fs.writeFileSync(`${ TEST_TEMP_DIR }/README.md`, "test");
+
+        const outputStream = { write: sinon.fake() };
+
+        // @ts-expect-error testing
+        const ghe = new GithubExtractor({ owner, repo, outputStream });
+
+        const fakeWriteListItem = sinon.fake();
+        ghe["writeListItem"] = fakeWriteListItem;
+
+        await ghe.getRepoList({ dest: TEST_TEMP_DIR, conflictsOnly: true });
+
+        // @ts-expect-error testing
+        sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
+
+        sinon.assert.calledOnceWithExactly(fakeWriteListItem, { filePath: "README.md", conflict: true });
+
+    });
+
+    it("correctly shows nothing when there no conflicts and conflictsOnly = true", async() => {
+
+        const owner = "octocat";
+        const repo = "Spoon-Knife";
+
+        const outputStream = { write: sinon.fake() };
+
+        // @ts-expect-error testing
+        const ghe = new GithubExtractor({ owner, repo, outputStream });
+
+        const fakeWriteListItem = sinon.fake();
+        ghe["writeListItem"] = fakeWriteListItem;
+
+        await ghe.getRepoList({ dest: TEST_TEMP_DIR, conflictsOnly: true });
+
+        // @ts-expect-error testing
+        sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
+
+        sinon.assert.notCalled(fakeWriteListItem);
+
+    });
+
     
 });
 
@@ -173,7 +285,7 @@ describe.sequential("downloadTo", context => {
     });
 
 
-    it("correctly gets selected files", async() => {
+    it("correctly gets selected files and returns an empty array when there are no typos", async() => {
 
         const owner = "SCons";
         const repo = "scons-examples";
@@ -188,10 +300,12 @@ describe.sequential("downloadTo", context => {
             selectedPaths: new Set([selectedPath]),
         });
 
-        await ghe.downloadTo({ dest: TEST_TEMP_DIR });
+        const typos = await ghe.downloadTo({ dest: TEST_TEMP_DIR });
 
         expect(fs.existsSync(`${ TEST_TEMP_DIR }/${ selectedPath }`)).toBe(true);
         expect(fs.existsSync(`${ TEST_TEMP_DIR }/${ nonSelected }`)).toBe(false);
+
+        expect(typos).toStrictEqual([]);
     });
 
     it("correctly ignores non matching cased paths when caseInsensitive is false", async() => {
@@ -232,10 +346,10 @@ describe.sequential("downloadTo", context => {
         expect(fs.existsSync(`${ TEST_TEMP_DIR }/${ selectedPath }`)).toBe(true);
     });
 
-    it.only("correctly selects non matching cased paths when caseInsensitive is true", async() => {
+    it("Correctly handles a non tar body", async() => {
 
-        const owner = "SCons";
-        const repo = "scons-examples";
+        const owner = "none";
+        const repo = "none";
 
         const selectedPath = "simple-variant-dir/src/app/SCONSCRIPT";
 
@@ -246,10 +360,24 @@ describe.sequential("downloadTo", context => {
             selectedPaths: new Set([selectedPath]),
         });
 
-        await ghe.downloadTo({ dest: TEST_TEMP_DIR });
+        
+        const readable = Readable.from(['test']);
 
-        expect(fs.existsSync(`${ TEST_TEMP_DIR }/${ selectedPath }`)).toBe(true);
+        const getTarBodyFake = sinon.fake.resolves({
+            statusCode: 404,
+            body: readable,
+            headers: {
+                "content-type": "text/plain",
+            },
+        });
+
+        ghe["getTarBody"] = getTarBodyFake;
+
+        await expect(ghe.downloadTo({ dest: TEST_TEMP_DIR })).rejects.toThrow(/TAR_BAD_ARCHIVE/);
+
     });
+
+    // typos
 
 });
 
