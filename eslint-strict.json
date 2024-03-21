@@ -9,8 +9,7 @@
         "eslint:all",
         "plugin:@typescript-eslint/strict-type-checked",
         "plugin:unicorn/all",
-        "plugin:sonarjs/recommended",
-        "plugin:ava/recommended"
+        "plugin:sonarjs/recommended"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -24,8 +23,7 @@
         "@stylistic/ts",
         "import",
         "unicorn",
-        "sonarjs",
-        "ava"
+        "sonarjs"
     ],
     "rules": {
 

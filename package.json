@@ -17,25 +17,10 @@
     "build": "tsc --build --incremental",
     "build:clean": "rimraf ./dist && tsc --build"
   },
-  "keywords": [
-    "cli",
-    "scaffolding",
-    "project-builder",
-    "templates",
-    "template",
-    "templating",
-    "builder",
-    "launcher",
-    "starter",
-    "starter-kit",
-    "create-react-app",
-    "custom",
-    "cra"
-  ],
-  "author": "",
+  "keywords": [ "Github", "templates", "tar", "tarball", "gzip", "download", "extract", "extractor", "github-extractor", "repo", "repository", "files", "folders", "list", "quick", "fast", "fastest", "quickly", "specific", "whole", "git", "clone", "depth", "shallow"],
+  "author": "bn-l",
   "license": "ISC",
   "devDependencies": {
-    "@ava/typescript": "^4.1.0",
     "@stylistic/eslint-plugin": "^1.6.3",
     "@swc/core": "^1.3.101",
     "@types/core-js": "^2.5.8",
@@ -54,8 +39,6 @@
     "eslint-plugin-sort-class-members": "^1.20.0",
     "eslint-plugin-typescript-sort-keys": "^3.2.0",
     "eslint-plugin-unicorn": "^51.0.1",
-    "faucet": "^0.0.4",
-    "msw": "^2.2.9",
     "rimraf": "^5.0.5",
     "simple-git": "^3.23.0",
     "sinon": "^17.0.1",
@@ -66,7 +49,6 @@
     "vitest": "^1.4.0"
   },
   "dependencies": {
-    "@mswjs/interceptors": "^0.26.8",
     "chalk": "^5.3.0",
     "fastest-levenshtein": "^1.0.16",
     "meow": "^13.2.0",
