@@ -11,8 +11,8 @@ const BENCH_EXTRACT_DIR = "./bench/BENCH_EXTRACT_DIR";
 fs.mkdirSync(BENCH_CLONE_DIR, { recursive: true });
 fs.mkdirSync(BENCH_EXTRACT_DIR, { recursive: true });
 
-const owner = "Call-for-Code";
-const repo = "Project-Sample";
+const owner = "facebook";
+const repo = "react";
 const repoUrl = "https://github.com/Call-for-Code/Project-Sample";
 
 

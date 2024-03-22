@@ -271,11 +271,3 @@ export class GithubExtractor {
     }
 }
 
-
-const ghe = new GithubExtractor({ 
-    owner: "SCons", 
-    repo: "scons-examples",
-    outputStream: process.stdout,
-});
-
-await ghe.getRepoList({ dest: "test", recursive: false });
