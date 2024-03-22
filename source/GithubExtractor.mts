@@ -158,9 +158,10 @@ export class GithubExtractor {
 
     public async downloadTo({ dest }: { dest: string }) {
 
-        // const defaultBranch = await this.getDefaultBranch() ?? "master";
         const { body, controller } = await this.getTarBody();
         const internalList: string[] = [];
+        
+        await fsp.mkdir(dest, { recursive: true });
 
         try {
             await pipeline(
@@ -271,3 +272,16 @@ export class GithubExtractor {
     }
 }
 
+// debug
+
+// const ghe = new GithubExtractor({ owner: "facebook", repo: "react" });
+
+// const t0 = performance.now();
+
+// await ghe.downloadTo({ dest: ".tmp/react/" });
+
+// const t1 = performance.now();
+
+// console.log(`Downloaded in ${ t1 - t0 }`);
+
+// await fsp.rm(".tmp/react", { recursive: true });
