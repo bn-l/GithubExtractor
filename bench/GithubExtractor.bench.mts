@@ -5,20 +5,24 @@ import { simpleGit } from "simple-git";
 import fs from "node:fs";
 
 
-const BENCH_CLONE_DIR = "./bench/BENCH_CLONE_DIR";
-const BENCH_EXTRACT_DIR = "./bench/BENCH_EXTRACT_DIR";
+const BENCH_CLONE_DIR = ".tmp/bench/BENCH_CLONE_DIR";
+const BENCH_EXTRACT_DIR = ".tmp/bench/BENCH_EXTRACT_DIR";
 
 fs.mkdirSync(BENCH_CLONE_DIR, { recursive: true });
 fs.mkdirSync(BENCH_EXTRACT_DIR, { recursive: true });
 
-const owner = "facebook";
-const repo = "react";
+// const owner = "facebook";
+// const repo = "react";
+// const repoUrl = "https://github.com/facebook/react";
+
+const owner = "Call-for-Code";
+const repo = "Project-Sample";
 const repoUrl = "https://github.com/Call-for-Code/Project-Sample";
 
 
 const benchMarkOptions: BenchOptions = {
     iterations: 5,
-    time: 1000,
+    time: 5000,
     warmupIterations: 0,
     warmupTime: 0,
     now: () => performance.now(),
