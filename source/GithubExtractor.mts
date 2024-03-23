@@ -271,17 +271,3 @@ export class GithubExtractor {
         return repoList;
     }
 }
-
-// debug
-
-// const ghe = new GithubExtractor({ owner: "facebook", repo: "react" });
-
-// const t0 = performance.now();
-
-// await ghe.downloadTo({ dest: ".tmp/react/" });
-
-// const t1 = performance.now();
-
-// console.log(`Downloaded in ${ t1 - t0 }`);
-
-// await fsp.rm(".tmp/react", { recursive: true });

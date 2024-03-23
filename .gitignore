@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .vscode/
-coverage/
+coverage/*
+!coverage/lcov.info
 .tap/
 .tmp/
