@@ -22,7 +22,7 @@ import { Readable } from "node:stream";
 
 const TEST_OWNER = "octocat";
 const TEST_REPO = "Spoon-Knife";
-const TEST_TEMP_DIR = "./tests/TEST_TEMP_DIR";
+const TEST_TEMP_DIR = "./test/TEST_TEMP_DIR";
 
 
 
