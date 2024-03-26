@@ -27,6 +27,7 @@
     "extract",
     "extractor",
     "github-extractor",
+    "github_extractor",
     "repo",
     "repository",
     "files",
@@ -77,8 +78,6 @@
   "dependencies": {
     "chalk": "^5.3.0",
     "fastest-levenshtein": "^1.0.16",
-    "meow": "^13.2.0",
-    "ora": "^8.0.1",
     "tar": "^6.2.0",
     "undici": "^6.7.1"
   }

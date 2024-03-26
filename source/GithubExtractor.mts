@@ -10,8 +10,6 @@ import { request } from "undici";
 import path from "node:path";
 
 
-// const { closest } = fastlev;
-
 type Typo = [original: string, correction: string];
 
 type ListItem = { filePath: string; conflict: boolean };
