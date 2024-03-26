@@ -3,7 +3,11 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
     test: {
         coverage: {
-            reporter: ["text", "lcov"],
+            reporter: [
+                ["text", {file: "coverage.txt"}], 
+                ["lcov"],
+                ["json-summary"],
+            ],
             include: ["source/**", "!source/index.mts", "!source/**temp**"],
         },
         include: [

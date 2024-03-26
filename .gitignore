@@ -3,3 +3,4 @@ dist/
 .vscode/
 .tap/
 .tmp/
+coverage/coverage-summary.json

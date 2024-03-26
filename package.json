@@ -10,12 +10,15 @@
   "scripts": {
     "start:dev": "ts-node",
     "bench": "vitest bench --run",
-    "test": "vitest --bail=1 --run --coverage",
+    "test": "vitest --bail=1 --run --coverage --exclude \"**/*online*\"",
     "test:single": "vitest --bail=1",
+    "test:online": "vitest online --bail=1",
     "lint": "npx eslint source --ext .mts",
     "lint:strict": "npx eslint --config ./eslint-strict.json source --ext .mts",
     "build": "tsc --build --incremental",
-    "build:clean": "rimraf ./dist && tsc --build"
+    "coverageTasks": "node ./scripts/coverage-visual.mjs",
+    "build:clean": "rimraf ./dist && tsc --build",
+    "prepublish": "npm run test && npm run lint:strict && npm run build:clean && npm run covbadge"
   },
   "keywords": [
     "Github",
@@ -58,6 +61,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "@vitest/coverage-v8": "^1.4.0",
     "@vitest/ui": "^1.4.0",
+    "badgen": "^3.2.3",
     "c8": "^9.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",

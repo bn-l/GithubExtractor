@@ -97,6 +97,7 @@ beforeAll(() => {
 beforeEach(async() => {
     // await new Promise((res) => setTimeout(res, Math.random() * 1000));
 
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
     fs.rmSync(TEMP_DIR, { recursive: true });
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 
