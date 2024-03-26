@@ -10,15 +10,15 @@
   "scripts": {
     "start:dev": "ts-node",
     "bench": "vitest bench --run",
-    "test": "vitest --bail=1 --run --coverage --exclude \"**/*online*\"",
+    "test": "vitest --run --coverage --exclude \"**/*online*\"",
     "test:single": "vitest --bail=1",
     "test:online": "vitest online --bail=1",
     "lint": "npx eslint source --ext .mts",
     "lint:strict": "npx eslint --config ./eslint-strict.json source --ext .mts",
     "build": "tsc --build --incremental",
-    "covbadge": "node ./dist/scripts/coverage-badge.mjs",
+    "coverage-badge": "tsx scripts/coverage-badge.ts",
     "build:clean": "rimraf ./dist && tsc --build",
-    "prepublish": "npm run test && npm run build:clean && npm run covbadge"
+    "publish-ci": "tsx scripts/publish-ci.ts"
   },
   "keywords": [
     "Github",
@@ -75,9 +75,11 @@
     "sinon": "^17.0.1",
     "tinybench": "^2.6.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^7.1.0",
-    "vitest": "^1.4.0"
+    "vitest": "^1.4.0",
+    "zx": "^7.2.3"
   },
   "dependencies": {
     "chalk": "^5.3.0",

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+
+  # check-workflow-files:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   # See: https://github.com/dorny/paths-filter
+  #   #  quite useful, can be used to trigger certain tests 
+  #   #  only when certain files change.
+  #     - uses: actions/checkout@v4
+  #     - uses: dorny/paths-filter@v3
+  #       id: changes
+  #       with:
+  #         filters: |
+  #           workflow:
+  #             - '.github/workflows/**'
+  #     - name: Fail if workflow files are changed
+  #       run: exit 1
+  #       if: steps.changes.outputs.workflow == 'true'
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+
+  test:
+    runs-on: ${{ matrix.os }}
+
+    timeout-minutes: 30
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node_version: [18]
+        include:
+          - os: macos-14
+            node_version: 18
+          - os: windows-latest
+            node_version: 18
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install
+        run: npm ci
+
+      - name: Test Non Online
+        run: npm run test
+
+      - name: Test Online
+        run: npm run test:online
+
+      - name: Build
+        run: npm run build:clean
+
+      - name: Coverage badge update
+        run: npm run coverage-badge
+
