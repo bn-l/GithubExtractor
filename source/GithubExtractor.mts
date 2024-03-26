@@ -7,6 +7,7 @@ import fsp from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import tar from "tar";
 import { request } from "undici";
+import path from "node:path";
 
 
 // const { closest } = fastlev;
@@ -17,46 +18,82 @@ type ListItem = { filePath: string; conflict: boolean };
 
 
 interface GithubExtractorOptions {
+    /**
+     * "octocat" in https://github.com/octocat/Spoon-Knife                 
+     */
     owner: string; 
+    /**
+     * "Spoon-Knife" in https://github.com/octocat/Spoon-Knife                 
+     */
     repo: string; 
-    highlightConflicts?: boolean;
-    outputStream?: NodeJS.WritableStream;
+    /**
+     * Whether to ignore casing in paths. Default is false so SomePath/someFile.js will be
+     * different to SOMEPATH/somefile.js.
+     * @default false
+     */
     caseInsensitive?: boolean; 
-    selectedPaths?: Set<string>; 
 }
 
 const CONFLICT_COLOR = chalk.hex("#d20f39");
 
+interface ListStreamOptions {
+    /**
+     * The stream to write the repo paths to for visual output as the list is being created.
+     *  by default it will write to the console.
+     * @default process.stdout
+     */
+    outputStream?: NodeJS.WritableStream;
+    /**
+     * Whether to use ascii escape characters to highlight conflicts when writing to the
+     *  outputStream.
+     * @default true
+     */
+    highlightConflicts?: boolean;
+    /**
+     * Include new line at the end of each listed repo path.
+     * @default true
+     */
+    newLine?: boolean;
+}
+
+interface GetRepoListOptions {
+    /**
+     * The destination directory for the repo's files. Used to detect conflicts
+     * and must be set if any conflict option is set.
+     */
+    dest?: string; 
+    /**
+     * Only list repo files in conflict with dest
+     * @default false
+     */
+    conflictsOnly?: boolean; 
+    /**
+     * If false will only list files and folders in the top level. Useful for repos with many files.
+     * @default true
+     */
+    recursive?: boolean;
+    /**
+     * Options for the stream to write the repo paths to for visual output as the list is being created. By default it writes to the console.
+     */
+    streamOptions?: ListStreamOptions;
+}
 
 export class GithubExtractor {
 
     public caseInsensitive: GithubExtractorOptions["caseInsensitive"];
     public debug: boolean = false;
-    public highlightConflicts: boolean;
     public owner: GithubExtractorOptions["owner"];
     public repo: GithubExtractorOptions["repo"];
-    public selectedPaths: GithubExtractorOptions["selectedPaths"];
     
-    protected outputStream: GithubExtractorOptions["outputStream"];
-    protected repoList: ListItem[] | undefined;
     protected requestFn: typeof request = request;
     
 
     constructor(
-        { owner, repo, highlightConflicts, outputStream, caseInsensitive, selectedPaths }: GithubExtractorOptions
+        { owner, repo, caseInsensitive }: GithubExtractorOptions
     ) {
-
         this.owner = owner;
         this.repo = repo;
-
-        this.highlightConflicts = highlightConflicts ?? true;
         this.caseInsensitive = caseInsensitive ?? false;
-
-        this.outputStream = outputStream;
-
-        if (selectedPaths) {
-            this.selectedPaths = this.normalizePathSet(selectedPaths);
-        }
     }
     
     protected normalizeTarPath(tarPath: string) {
@@ -143,12 +180,13 @@ export class GithubExtractor {
     }
 
 
-    protected handleTypos(pathList: string[]): Typo[] {
-
-        if (!this.selectedPaths) return []; 
+    protected handleTypos(
+        { pathList, selectedSet }:
+        { pathList: string[]; selectedSet: Set<string> }
+    ): Typo[] {
 
         const typos: Typo[] = [];
-        for (const original of this.selectedPaths.values()) {
+        for (const original of selectedSet.values()) {
 
             const correction = closest(original, pathList);
             typos.push([original, correction]);
@@ -156,11 +194,17 @@ export class GithubExtractor {
         return typos;
     }
 
-    public async downloadTo({ dest }: { dest: string }) {
+    public async downloadTo(
+        { dest, selectedPaths }: 
+        { dest: string; selectedPaths?: string[] }
+    ) {
+        const selectedSet = selectedPaths ? 
+            this.normalizePathSet(new Set(selectedPaths)) :
+            undefined;
 
         const { body, controller } = await this.getTarBody();
         const internalList: string[] = [];
-        
+
         await fsp.mkdir(dest, { recursive: true });
 
         try {
@@ -169,19 +213,19 @@ export class GithubExtractor {
                 tar.extract({
                     cwd: dest,
                     strip: 1,
-                    filter: (path) => {
-                        path = this.normalizeTarPath(path);
-                        internalList.push(path);
+                    filter: (fPath) => {
+                        fPath = this.normalizeTarPath(fPath);
+                        internalList.push(fPath);
 
-                        if (!path || (this.selectedPaths && !this.selectedPaths.has(path))) {
+                        if (!fPath || (selectedSet && !selectedSet.has(fPath))) {
                             return false;
                         }
-                        this.selectedPaths?.delete(path);
+                        selectedSet?.delete(fPath);
                         return true;
                     },
                     onentry: (entry) => {
                         entry.on("end", () => {
-                            if (this.selectedPaths?.size === 0) {
+                            if (selectedSet?.size === 0) {
                                 controller.abort();
                             }
                         });
@@ -190,21 +234,37 @@ export class GithubExtractor {
             );
 
             // if we still haven't struck out all the paths, there might be typos
-            return this.selectedPaths?.size ? this.handleTypos(internalList) : [];
+            return selectedSet?.size ? this.handleTypos({ pathList: internalList, selectedSet }) : [];
         } 
         finally {
             body.destroy();
         }
     }
 
-    public async getLocalDirContents(dir: string): Promise<Set<string>> {
+    /**
+     * Get a set of the contents of a directory, sorted using using string.localeCompare (with 
+     * directories listed first).
+     * all paths are converted to posix and are relative to the given dir.
+     * @param dir
+     * @param recursive - default true
+     * @returns 
+     */
+    public async getLocalDirSet(dir: string, recursive = true): Promise<Set<string>> {
 
-        const dirEnts = await fsp.readdir(dir, { withFileTypes: true });
-        const slashedDirs = dirEnts
-            .map(ent => ent.isDirectory() ? ent.name + "/" : ent.name)
-            .map(ent => this.normalizeFilePath(ent));
+        const dirEnts = await fsp.readdir(dir, { withFileTypes: true, recursive });
 
-        slashedDirs.sort((a, b) => {
+        let processed: string[] = [];
+        
+        for (const ent of dirEnts) {
+            const relPath = path.relative(dir, path.join(ent.path, ent.name));
+            const posixPath = path.posix.normalize(relPath.split(path.sep).join(path.posix.sep));
+            
+            let processedPath = ent.isDirectory() ? posixPath + "/" : posixPath;
+            processedPath = this.normalizeFilePath(processedPath);
+            processed.push(processedPath);
+        }
+        
+        processed.sort((a, b) => {
             if (a.endsWith("/") && !b.endsWith("/")) {
                 return -1;
             }
@@ -214,31 +274,36 @@ export class GithubExtractor {
             return a.localeCompare(b);
         });
 
-        const dirSet = new Set(slashedDirs);
+        const dirSet = new Set(processed);
         return dirSet;
     }
    
-    protected writeListItem(listItem: ListItem) {
+    protected writeListStream(
+        { listItem, 
+            streamOptions: { 
+                outputStream = process.stdout, highlightConflicts = true, newLine = true, 
+            }, 
+        }: 
+        { listItem: ListItem; streamOptions: ListStreamOptions }
+    ) {
 
-        if (listItem.conflict && this.highlightConflicts) {
-            this.outputStream?.write(CONFLICT_COLOR(listItem.filePath) + "\n");
-        }
-        else {
-            this.outputStream?.write(listItem.filePath + "\n");
-        }
+        const listString = listItem.conflict && highlightConflicts ?
+            CONFLICT_COLOR(listItem.filePath) :
+            listItem.filePath;
+        
+        const endOfLineChar = newLine ? "\n" : "";
+
+        outputStream.write(listString + endOfLineChar);
     }
 
     public async getRepoList(
-        { dest, conflictsOnly = false, recursive = false }: 
-        { dest: string; conflictsOnly?: boolean; recursive?: boolean }
+        { dest, conflictsOnly = false, recursive = true, streamOptions = {} }: GetRepoListOptions = {}
     ): Promise<ListItem[]> {
-
-        if (this.repoList) return this.repoList;
         
         const repoList: ListItem[] = [];
         
         let destSet: Set<string> | undefined;
-        if (dest) destSet = await this.getLocalDirContents(dest);
+        if (dest) destSet = await this.getLocalDirSet(dest);
 
         const handleEntry = (entry: tar.ReadEntry) => {
 
@@ -250,7 +315,7 @@ export class GithubExtractor {
 
             if (!conflictsOnly || conflict) {
                 repoList.push(listItem);
-                this.writeListItem(listItem);
+                this.writeListStream({ listItem, streamOptions });
             }
         };
 
@@ -267,7 +332,6 @@ export class GithubExtractor {
 
         await pipeline(body, tar.list({ onentry: handleEntry, filter }));
 
-        this.repoList = repoList;
         return repoList;
     }
 }

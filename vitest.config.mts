@@ -3,12 +3,12 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
     test: {
         coverage: {
-            reporter: ['html', "text", "lcovonly"],
-            include: ["source/**", "!source/index.mts"],
+            reporter: ["text", "lcov"],
+            include: ["source/**", "!source/index.mts", "!source/**temp**"],
         },
         include: [
             'test/**/*.{test,spec}.?(c|m)[jt]s?(x)',
-            '!test/fixtures/**'
+            '!test/fixtures/**',
         ],
         poolOptions: {
             threads: {

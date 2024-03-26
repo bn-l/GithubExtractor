@@ -147,15 +147,16 @@ describe("normalizePathSet unit tests", context => {
 });
 
 
-describe("getLocalDirContents unit tests", async(context) => {
+describe("getLocalDirSet unit tests", async(context) => {
+
 
     const fspReturn = ([
-        { name: "testFile1.txt", isDirectory: () => false },
-        { name: "someDir/README.md", isDirectory: () => false },
-        { name: "anotherDir", isDirectory: () => true },
-        { name: "CAPITALFILE.TXT", isDirectory: () => false },
-        { name: "SERIOUSDIR", isDirectory: () => true },
-    ]);
+        { name: "testFile1.txt", isDirectory: () => false, path: "./testpath" },
+        // replicating the weirdness that happens on windows.
+        { name: "README.md", isDirectory: () => false, path: "testpath\\someDir"},
+        { name: "someDir", isDirectory: () => true, path: "./testpath"},
+        { name: "CAPITALFILE.TXT", isDirectory: () => false, path: "./testpath"},
+    ]);        
 
     it("returns a set of files in alphabetical order", async() => {
 
@@ -167,11 +168,10 @@ describe("getLocalDirContents unit tests", async(context) => {
             repo: TEST_REPO,
             caseInsensitive: false,
         });
-        const dirSet = await ghe.getLocalDirContents("testpath");
+        const dirSet = await ghe.getLocalDirSet("testpath");
         expect(dirSet).toStrictEqual(new Set([
+            "someDir/",
             "CAPITALFILE.TXT",
-            "SERIOUSDIR/",
-            "anotherDir/",
             "someDir/README.md",
             "testFile1.txt",
         ]));
@@ -187,11 +187,10 @@ describe("getLocalDirContents unit tests", async(context) => {
             repo: TEST_REPO,
             caseInsensitive: true,
         });
-        const dirSet = await ghe.getLocalDirContents("testpath");
+        const dirSet = await ghe.getLocalDirSet("testpath");
         expect(dirSet).toStrictEqual(new Set([
-            "anotherdir/",
+            "somedir/",
             "capitalfile.txt",
-            "seriousdir/",
             "somedir/readme.md",
             "testfile1.txt",
         ]));
@@ -201,37 +200,39 @@ describe("getLocalDirContents unit tests", async(context) => {
 
 describe("writeListItem unit tests", async(context) => {
 
-    it("writes the file path to the output stream", async() => {
+    it("writes the file path to the output stream with highlightConflicts: false", async() => {
         const ghe = new GithubExtractor({
             owner: TEST_OWNER,
             repo: TEST_REPO,
-            outputStream: {
-                // @ts-expect-error testing
-                write: sinon.fake(),
-            },
         });
 
-        ghe["writeListItem"]({ filePath: "testFile1.txt", conflict: false });
+        const outputStream = { write: sinon.fake(), };
+        const listItem = { filePath: "testFile1.txt", conflict: false };
+
+        const streamOptions = { outputStream, highlightConflicts: false };
 
         // @ts-expect-error testing
-        expect(ghe["outputStream"]?.write.calledWith("testFile1.txt\n")).toBe(true);
+        ghe["writeListStream"]({listItem, streamOptions});
 
+        sinon.assert.calledWithExactly(outputStream.write, "testFile1.txt\n");
     });
 
     it("writes the file path to the output stream if conflict is true", async() => {
         const ghe = new GithubExtractor({
             owner: TEST_OWNER,
             repo: TEST_REPO,
-            outputStream: {
-                // @ts-expect-error testing
-                write: sinon.fake(),
-            },
         });
 
-        ghe["writeListItem"]({ filePath: "testFile1.txt", conflict: true });
-        // @ts-expect-error testing
-        const firtCallArgs = ghe["outputStream"]?.write.firstCall.args;
+        const outputStream = {  write: sinon.fake(), };
+        const listItem = { filePath: "testFile1.txt", conflict: true };
+        const streamOptions = { outputStream, highlightConflicts: true };
 
+        // @ts-expect-error testing
+        ghe["writeListStream"]({listItem, streamOptions});
+
+        const firtCallArgs = outputStream.write.firstCall.args;
+
+        expect(firtCallArgs[0]).not.toEqual("testFile1.txt\n"); // contains ansi escape
         expect(stripAnsi(firtCallArgs[0])).toBe("testFile1.txt\n");
 
     });
@@ -243,11 +244,11 @@ describe("Handletypos works as expected", async(context) => {
 
     it("", async() => {
         const ghe = new GithubExtractor({ owner: TEST_OWNER, repo: TEST_REPO });
-        ghe["selectedPaths"] = new Set(["someDir/rAdMeh.md", "loisance.txt", "kewlpucture.jpg"]);
 
+        const selectedSet = new Set(["someDir/rAdMeh.md", "loisance.txt", "kewlpucture.jpg"]);
         const pathList = ["README.md", "license", "folder/README.md", "someDir/README.md", "coolpicture.jpg"];
 
-        const result = await ghe["handleTypos"](pathList);
+        const result = ghe["handleTypos"]({pathList, selectedSet});
 
         expect(result).toStrictEqual([
             ["someDir/rAdMeh.md", "someDir/README.md"],

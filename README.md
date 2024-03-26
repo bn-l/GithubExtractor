@@ -12,5 +12,18 @@ npm install github-extractor
 
 ## Usage 
 
+### Log a repos contents to the console:
+
+```typescript
+import githubExtractor from "github-extractor";
+
+const ghe = new githubExtractor({
+    
+})
+
+```
+
+
+
 
 
