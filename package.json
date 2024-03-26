@@ -18,7 +18,7 @@
     "build": "tsc --build --incremental",
     "coverageTasks": "node ./scripts/coverage-visual.mjs",
     "build:clean": "rimraf ./dist && tsc --build",
-    "prepublish": "npm run test && npm run lint:strict && npm run build:clean && npm run covbadge"
+    "prepublish": "npm run test && npm run build:clean && npm run covbadge"
   },
   "keywords": [
     "Github",

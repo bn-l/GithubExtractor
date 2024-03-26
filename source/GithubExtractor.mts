@@ -275,7 +275,7 @@ export class GithubExtractor {
 
         const dirEnts = await fsp.readdir(dir, { withFileTypes: true, recursive });
 
-        let processed: string[] = [];
+        const processed: string[] = [];
         
         for (const ent of dirEnts) {
             const relPath = path.relative(dir, path.join(ent.path, ent.name));
