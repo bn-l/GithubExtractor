@@ -194,6 +194,30 @@ export class GithubExtractor {
         return typos;
     }
 
+    /**
+     * Download a repo to a certain location (`dest`)
+     * 
+     * @returns - An empty array if all `selectedPaths` were found / there were no `selectedPaths`
+     *  given OR an array of possible typos if some of the `selectedPaths` were not found.
+     * 
+     * @example 
+     * ```typescript
+     * await ghe.downloadTo({ dest: "some/path" });
+     * ```
+     * Using `selectedPaths`:
+     * Downloads only the paths in the repo specified. Do not prefix with repo name. It will 
+     * stop downloading once it has the file. This can make getting a single file from a large 
+     * repo very fast.
+     * 
+     * ```typescript
+     * // Save just `boo.jpg`:
+     * await ghe.downloadTo({ dest: "some/path", selectedPaths: ["someFolder/boo.jpg"] });
+     *
+     * // just the `README.md` file: 
+     * await ghe.downloadTo({ dest: "some/path", selectedPaths: ["README.md"] });
+     *    
+     * ```
+     */
     public async downloadTo(
         { dest, selectedPaths }: 
         { dest: string; selectedPaths?: string[] }
@@ -296,7 +320,23 @@ export class GithubExtractor {
         outputStream.write(listString + endOfLineChar);
     }
 
-    public async getRepoList(
+    /**
+     * Returns a list of files in the repo and writes to (by default) stdout (console.log). Supply
+     * an object with options to change defaults.
+     * 
+     * @example
+     * ```typescript
+     * const fullList = await ghe.list();
+     * 
+     * // List a repo non recursively to only show the top-level items:
+     * const topLevel = await ghe.list({ recursive: false }); 
+     * 
+     * // Show any conflicts that might arise if downloading to `dest`:
+     * const conflicts = await ghe.list({ dest: "some/path", conflictsOnly: true });
+     *    
+     * ```
+     */
+    public async list(
         { dest, conflictsOnly = false, recursive = true, streamOptions = {} }: GetRepoListOptions = {}
     ): Promise<ListItem[]> {
         

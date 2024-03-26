@@ -180,7 +180,7 @@ describe.sequential("getRepoList", context => {
         const ghe = new GithubExtractor({ owner, repo });
         
         // @ts-expect-error testing
-        const list = await ghe.getRepoList({ dest: TEMP_DIR, recursive: true, outputStream });
+        const list = await ghe.list({ dest: TEMP_DIR, recursive: true, outputStream });
 
         expect(list).toHaveLength(4);
         expect(list).to.have.deep.members([
@@ -200,7 +200,7 @@ describe.sequential("getRepoList", context => {
 
         const ghe = new GithubExtractor({ owner, repo });
 
-        const list = await ghe.getRepoList();
+        const list = await ghe.list();
 
         expect(list).toHaveLength(4);
         expect(list).to.have.deep.members([
@@ -224,7 +224,7 @@ describe.sequential("getRepoList", context => {
         const write = streamOptions.outputStream.write;
 
         // @ts-expect-error testing
-        await ghe.getRepoList({ dest: TEMP_DIR, recursive: false, streamOptions });
+        await ghe.list({ dest: TEMP_DIR, recursive: false, streamOptions });
 
         sinon.assert.calledWithExactly(write, "README.md\n");
         sinon.assert.calledWithExactly(write, "somefile.txt\n");
@@ -246,7 +246,7 @@ describe.sequential("getRepoList", context => {
         const ghe = new GithubExtractor({ owner, repo });
         
         // @ts-expect-error testing
-        await ghe.getRepoList({ dest: TEMP_DIR, recursive: true, streamOptions });
+        await ghe.list({ dest: TEMP_DIR, recursive: true, streamOptions });
 
         sinon.assert.calledWithExactly(write, "README.md\n");
         sinon.assert.calledWithExactly(write, "somefile.txt\n");
@@ -272,7 +272,7 @@ describe.sequential("getRepoList", context => {
         ghe["writeListStream"] = fakeWriteListItem;
 
         // @ts-expect-error testing
-        await ghe.getRepoList({ dest: TEMP_DIR, streamOptions, recursive: true });
+        await ghe.list({ dest: TEMP_DIR, streamOptions, recursive: true });
 
         // @ts-expect-error testing
         sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
@@ -309,7 +309,7 @@ describe.sequential("getRepoList", context => {
         ghe["writeListStream"] = fakeWriteListItem;
 
         // @ts-expect-error testing
-        await ghe.getRepoList({ dest: TEMP_DIR, conflictsOnly: true, streamOptions, recursive: false });
+        await ghe.list({ dest: TEMP_DIR, conflictsOnly: true, streamOptions, recursive: false });
 
         // @ts-expect-error testing
         sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
@@ -333,7 +333,7 @@ describe.sequential("getRepoList", context => {
         ghe["writeListStream"] = fakeWriteListItem;
         
         // @ts-expect-error testing
-        await ghe.getRepoList({ dest: TEMP_DIR, conflictsOnly: true, streamOptions });
+        await ghe.list({ dest: TEMP_DIR, conflictsOnly: true, streamOptions });
 
         // @ts-expect-error testing
         sinon.assert.calledOnceWithMatch(request, `https://codeload.github.com/${ owner }/${ repo }/tar.gz/main`);
@@ -475,7 +475,7 @@ describe.sequential("downloadTo", context => {
 
         const ghe = new GithubExtractor({ owner, repo });
 
-        const list = await ghe.getRepoList({ dest: TEMP_DIR, recursive: true });
+        const list = await ghe.list({ dest: TEMP_DIR, recursive: true });
         const listFileNames = list.map(({ filePath }) => filePath);
 
         fs.rmSync(TEMP_DIR, { recursive: true });

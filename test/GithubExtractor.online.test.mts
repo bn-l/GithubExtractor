@@ -108,7 +108,7 @@ describe("getRepoList", context => {
         const ghe = new GithubExtractor({ owner, repo });
         
         // @ts-expect-error testing
-        const list = await ghe.getRepoList({ dest: TEMP_DIR, recursive: true, outputStream });
+        const list = await ghe.list({ dest: TEMP_DIR, recursive: true, outputStream });
 
         expect(list).toHaveLength(4);
         expect(list).to.have.deep.members([
