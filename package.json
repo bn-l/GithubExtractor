@@ -16,7 +16,7 @@
     "lint": "npx eslint source --ext .mts",
     "lint:strict": "npx eslint --config ./eslint-strict.json source --ext .mts",
     "build": "tsc --build --incremental",
-    "coverageTasks": "node ./scripts/coverage-visual.mjs",
+    "covbadge": "node ./dist/scripts/coverage-badge.mjs",
     "build:clean": "rimraf ./dist && tsc --build",
     "prepublish": "npm run test && npm run build:clean && npm run covbadge"
   },

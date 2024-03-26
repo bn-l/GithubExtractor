@@ -8,7 +8,9 @@ List github repositories and download individual files or whole repos. ~200% fas
 <a href="./coverage/coverage.txt">
     <img src="./images/coverage-badge.svg"> 
 </a>
-
+<a>
+<img src="https://img.shields.io/github/issues/bn-l/GithubExtractor">
+<img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com">
 
 ## Install
 
