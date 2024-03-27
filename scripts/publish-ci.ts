@@ -28,6 +28,10 @@ const releaseTag = version.includes("beta")
 
 console.log("Publishing version", version, "with tag", releaseTag || "latest");
 
-if (releaseTag) await $`npm publish --access public --tag ${ releaseTag }`;
-else await $`npm publish --access public`;
+if (releaseTag) {
+    await $`npm publish --provenance --access public --tag ${ releaseTag }`;
+}
+else {
+    await $`npm publish --provenance --access public`;
+}
 

@@ -7,8 +7,11 @@
     "dist/**/*"
   ],
   "type": "module",
-  "homepage": "https://github.com/bn-l/GithubExtractor",
-  "repository": "github:bn-l/GithubExtractor",
+  "homepage": "https://github.com/bn-l/GithubExtractor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bn-l/GithubExtractor.git"
+  },
   "scripts": {
     "start:dev": "ts-node",
     "bench": "vitest bench --run",
