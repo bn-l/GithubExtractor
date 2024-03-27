@@ -22,8 +22,7 @@ import githubExtractor from "github-extractor";
 const ghe = new githubExtractor({
     owner: "octocat",
     repo: "Spoon-Knife",
-    // The default setting is false so it IS case sensitive. 
-    // I.e. by default, Readme.md is a different file to README.md.
+    // The default: Readme.md is a different file to README.md
     caseInsensitive: false, 
 })
 ```
@@ -60,6 +59,9 @@ await ghe.downloadTo({ dest: "some/path", selectedPaths: ["someFolder/boo.jpg"] 
 await ghe.downloadTo({ dest: "some/path", selectedPaths: ["README.md"] });
    
 ```
+
+
+There are more options and they're all documented using jsdoc so will appear in intellisense. 
 
 
 

@@ -68,6 +68,3 @@ jobs:
       - name: Test Non Online
         run: npm run test
 
-      - name: Test Online
-        run: npm run test:online
-
