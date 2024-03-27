@@ -1,6 +1,6 @@
 {
   "name": "github-extractor",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Github Extractor: List or download a whole repo or specific files and folders very quickly",
   "main": "./dist/source/index.mjs",
   "files": [
