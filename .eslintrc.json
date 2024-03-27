@@ -100,7 +100,7 @@
         "@stylistic/js/brace-style": ["error", "stroustrup", { "allowSingleLine": true }],
         // "@stylistic/js/brace-style": ["error", "allman", { "allowSingleLine": true }],
         
-        "@stylistic/js/linebreak-style": ["error", "windows"],
+        // "@stylistic/js/linebreak-style": ["error", "windows"],
 
         "@typescript-eslint/object-curly-spacing": ["error", "always"],
 
