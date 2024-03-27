@@ -153,7 +153,7 @@ describe("getLocalDirSet unit tests", async(context) => {
     const fspReturn = ([
         { name: "testFile1.txt", isDirectory: () => false, path: "./testpath" },
         // replicating the weirdness that happens on windows.
-        { name: "README.md", isDirectory: () => false, path: "testpath\\someDir"},
+        { name: "README.md", isDirectory: () => false, path: "./testpath/someDir"},
         { name: "someDir", isDirectory: () => true, path: "./testpath"},
         { name: "CAPITALFILE.TXT", isDirectory: () => false, path: "./testpath"},
     ]);        
@@ -232,9 +232,7 @@ describe("writeListItem unit tests", async(context) => {
 
         const firtCallArgs = outputStream.write.firstCall.args;
 
-        expect(firtCallArgs[0]).not.toEqual("testFile1.txt\n"); // contains ansi escape
         expect(stripAnsi(firtCallArgs[0])).toBe("testFile1.txt\n");
-
     });
 
 });

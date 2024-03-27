@@ -7,7 +7,8 @@ import fsp from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import tar from "tar";
 import { request } from "undici";
-import path from "node:path";
+// import path from "node:path";
+import pathe from "pathe";
 
 
 type Typo = [original: string, correction: string];
@@ -278,10 +279,10 @@ export class GithubExtractor {
         const processed: string[] = [];
         
         for (const ent of dirEnts) {
-            const relPath = path.relative(dir, path.join(ent.path, ent.name));
-            const posixPath = path.posix.normalize(relPath.split(path.sep).join(path.posix.sep));
+            const relPath = pathe.relative(dir, pathe.join(ent.path, ent.name));
+            // const posixPath = path.posix.normalize(relPath.split(path.sep).join(path.posix.sep));
             
-            let processedPath = ent.isDirectory() ? posixPath + "/" : posixPath;
+            let processedPath = ent.isDirectory() ? relPath + "/" : relPath;
             processedPath = this.normalizeFilePath(processedPath);
             processed.push(processedPath);
         }
