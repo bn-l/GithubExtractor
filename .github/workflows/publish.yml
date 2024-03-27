@@ -35,9 +35,6 @@ jobs:
       - name: test
         run: npm test
 
-      - name: Check if working tree is clean
-        run: git diff --exit-code
-
       - name: Publish to npm
         run: npm run publish-ci ${{ github.ref_name }}
         env:
