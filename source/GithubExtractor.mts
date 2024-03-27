@@ -238,9 +238,11 @@ export class GithubExtractor {
                     strip: 1,
                     filter: (fPath) => {
                         fPath = this.normalizeTarPath(fPath);
+                        
+                        if (!fPath) return false;
                         internalList.push(fPath);
 
-                        if (!fPath || (selectedSet && !selectedSet.has(fPath))) {
+                        if (selectedSet && !selectedSet.has(fPath)) {
                             return false;
                         }
                         selectedSet?.delete(fPath);

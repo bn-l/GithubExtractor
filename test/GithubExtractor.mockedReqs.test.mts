@@ -116,7 +116,7 @@ afterEach(() => {
 
 
 afterAll(() => {
-
+    fs.rmSync(TEMP_DIR, { recursive: true });
 });
 
 
@@ -452,14 +452,13 @@ describe.sequential("downloadTo", context => {
         const owner = "bn-l";
         const repo = "repo"
 
-        const selectedPath = "SOMEFoLdEr/YOOHOO.html";
-
         const ghe = new GithubExtractor({ owner, repo, caseInsensitive: true });
 
+        const selectedPath = "SOMEFoLdEr/YOOHOO.html";
         await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath] });
-
         
-        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedPath }`)).not.toThrow();
+        const selectedNormed = ghe["normalizeFilePath"](selectedPath);
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedNormed }`)).not.toThrow();
     });
 
     it("Correctly handles a non tar body", async() => {
