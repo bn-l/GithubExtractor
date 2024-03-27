@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
 
+  # ! un comment when finished 
   # check-workflow-files:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -69,10 +70,4 @@ jobs:
 
       - name: Test Online
         run: npm run test:online
-
-      - name: Build
-        run: npm run build:clean
-
-      - name: Coverage badge update
-        run: npm run coverage-badge
 
