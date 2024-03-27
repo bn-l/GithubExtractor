@@ -69,7 +69,6 @@
     "eslint-plugin-sort-class-members": "^1.20.0",
     "eslint-plugin-typescript-sort-keys": "^3.2.0",
     "eslint-plugin-unicorn": "^51.0.1",
-    "np": "^10.0.1",
     "rimraf": "^5.0.5",
     "simple-git": "^3.23.0",
     "sinon": "^17.0.1",
