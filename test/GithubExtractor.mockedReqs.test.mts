@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach, afterAll, beforeAll, VitestUtils } from "vitest";
+import { closest } from "fastest-levenshtein";
 
 import sinon, { SinonSpy } from "sinon";
 
@@ -346,6 +347,24 @@ describe.sequential("getRepoList", context => {
     
 });
 
+import pathe from "pathe";
+
+let memo = new Map<string, string[]>();
+function checkFileExists(path: string) {
+
+    const pathNormed = pathe.normalize(path);
+
+    const dirPath = pathe.dirname(pathNormed);
+    let directoryContents = memo.get(dirPath) ?? fs.readdirSync(dirPath);
+    directoryContents = directoryContents.map((file) => pathe.join(dirPath, file));
+
+    try {
+        fs.readFileSync(pathNormed);
+        return true;
+    } catch {
+        throw new Error(`Couldn't find ${ pathNormed }. Closest match: ${ closest(path, directoryContents) }`);
+    }
+} 
 
 describe.sequential("downloadTo", context => {
 
@@ -360,9 +379,9 @@ describe.sequential("downloadTo", context => {
 
         await ghe.downloadTo({ dest: TEMP_DIR });
 
-        expect(fs.existsSync(`${ TEMP_DIR }/README.md`)).toBe(true);
-        expect(fs.existsSync(`${ TEMP_DIR }/somefolder/yoohoo.html`)).toBe(true);
-        expect(fs.existsSync(`${ TEMP_DIR }/somefile.txt`)).toBe(true);
+        expect(() => checkFileExists(`${ TEMP_DIR }/README.md`)).not.toThrow();
+        expect(() => checkFileExists(`${ TEMP_DIR }/somefolder/yoohoo.html`)).not.toThrow();
+        expect(() => checkFileExists(`${ TEMP_DIR }/somefile.txt`)).not.toThrow();
     });
 
 
@@ -381,9 +400,9 @@ describe.sequential("downloadTo", context => {
 
         const typos = await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath]});
 
-        expect(fs.existsSync(`${ TEMP_DIR }/${ selectedPath }`)).toBe(true);
-        expect(fs.existsSync(`${ TEMP_DIR }/${ nonSelected }`)).toBe(false);
-
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedPath }`)).not.toThrow();
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ nonSelected }`)).toThrow();
+        
         expect(typos).toStrictEqual([]);
     });
 
@@ -402,8 +421,8 @@ describe.sequential("downloadTo", context => {
 
         const typos = await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath]});
 
-        expect(fs.existsSync(`${ TEMP_DIR }/${ selectedPath }`)).toBe(false);
-        expect(fs.existsSync(`${ TEMP_DIR }/${ nonSelected }`)).toBe(false);
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedPath }`)).toThrow();
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ nonSelected }`)).toThrow();
 
         expect(typos).toStrictEqual([
             ["somefolder/YeewHew.html", "somefolder/yoohoo.html"]
@@ -423,7 +442,7 @@ describe.sequential("downloadTo", context => {
 
         await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath] });
 
-        expect(fs.existsSync(`${ TEMP_DIR }/${ selectedPath }`)).toBe(false);
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedPath }`)).toThrow();
     });
 
     it("correctly selects non matching cased paths when caseInsensitive is true", async() => {
@@ -439,7 +458,8 @@ describe.sequential("downloadTo", context => {
 
         await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath] });
 
-        expect(fs.existsSync(`${ TEMP_DIR }/${ selectedPath }`)).toBe(true);
+        
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedPath }`)).not.toThrow();
     });
 
     it("Correctly handles a non tar body", async() => {
