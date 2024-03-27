@@ -55,7 +55,7 @@ interface ListStreamOptions {
     newLine?: boolean;
 }
 
-interface GetRepoListOptions {
+interface ListOptions {
     /**
      * The destination directory for the repo's files. Used to detect conflicts
      * and must be set if any conflict option is set.
@@ -75,6 +75,24 @@ interface GetRepoListOptions {
      * Options for the stream to write the repo paths to for visual output as the list is being created. By default it writes to the console.
      */
     streamOptions?: ListStreamOptions;
+}
+
+interface DownloadToOptions {
+    /**
+     * Destination to download the files into. Warning: it will overwrite any existing files 
+     * by default unless extractOptions are set.
+     */
+    dest: string; 
+    /**
+     * Will only download these paths.
+     * @example
+     * ["README.md", ".github/workflows/ci.yml"]
+     */
+    selectedPaths?: string[]; 
+    /**
+     * Options for the tar.extract stream.
+     */
+    extractOptions?: tar.ExtractOptions;
 }
 
 export class GithubExtractor {
@@ -218,8 +236,7 @@ export class GithubExtractor {
      * ```
      */
     public async downloadTo(
-        { dest, selectedPaths }: 
-        { dest: string; selectedPaths?: string[] }
+        { dest, selectedPaths, extractOptions }: DownloadToOptions
     ) {
         const selectedSet = selectedPaths ? 
             this.normalizePathSet(new Set(selectedPaths)) :
@@ -234,6 +251,7 @@ export class GithubExtractor {
             await pipeline(
                 body, 
                 tar.extract({
+                    ...extractOptions,
                     cwd: dest,
                     strip: 1,
                     filter: (fPath) => {
@@ -338,7 +356,7 @@ export class GithubExtractor {
      * ```
      */
     public async list(
-        { dest, conflictsOnly = false, recursive = true, streamOptions = {} }: GetRepoListOptions = {}
+        { dest, conflictsOnly = false, recursive = true, streamOptions = {} }: ListOptions = {}
     ): Promise<ListItem[]> {
         
         const repoList: ListItem[] = [];
