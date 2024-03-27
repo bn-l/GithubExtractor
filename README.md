@@ -5,7 +5,14 @@
 
 List github repositories and download individual files or whole repos. ~200% faster than clone depth=1 for an entire repo and much, much faster if you just need a single file.
 
-<a href="./coverage/coverage.txt"><img src="./images/coverage-badge.svg"></a>  <a><img src="https://img.shields.io/github/issues/bn-l/GithubExtractor"> <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com">
+<img src="https://github.com/bn-l/GithubExtractor/actions/workflows/ci.yml/badge.svg" alt="Continuous Integration status badge">  
+<a href="./coverage/coverage.txt">
+    <img src="./images/coverage-badge.svg" alt="Code coverage badge">
+</a>  
+<a>
+    <img src="https://img.shields.io/github/issues/bn-l/GithubExtractor" alt="GitHub issues badge"> 
+</a>
+<img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com" alt="Pull requests welcome badge">
 
 ## Install
 
