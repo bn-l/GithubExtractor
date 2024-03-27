@@ -50,7 +50,6 @@
         "test",
         "bench",
         "types",
-        "scripts"
     ],
     "plugins": [
 
