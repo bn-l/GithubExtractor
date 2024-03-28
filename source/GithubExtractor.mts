@@ -75,6 +75,10 @@ interface ListOptions {
      * Options for the stream to write the repo paths to for visual output as the list is being created. By default it writes to the console.
      */
     streamOptions?: ListStreamOptions;
+    /**
+     * Include everything matching the regular expression. To exclude use negated regex.
+     */
+    include?: RegExp;
 }
 
 interface DownloadToOptions {
@@ -364,7 +368,7 @@ export class GithubExtractor {
      * ```
      */
     public async list(
-        { dest, conflictsOnly = false, recursive = true, streamOptions = {} }: ListOptions = {}
+        { dest, conflictsOnly = false, recursive = true, streamOptions = {}, include }: ListOptions = {}
     ): Promise<ListItem[]> {
         
         const repoList: ListItem[] = [];
@@ -387,6 +391,9 @@ export class GithubExtractor {
         };
 
         const filter = (path: string) => {
+            if (include && !include.test(path)) {
+                return false;
+            }
             // Length <= 2 to account for pre normalization where the archive name isn't
             //  isn't removed. So anything with more than two parts in the path is not first level.
             // path.slice(1, -1): slice starting at 1 takes care of a "/" prefix,

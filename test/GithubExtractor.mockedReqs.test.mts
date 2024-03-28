@@ -193,7 +193,7 @@ describe.sequential("getRepoList", context => {
         ]);
     });
 
-    it("returns a repo list when given no arguments", async() => {
+    it("returns a repo list with all files when given no arguments", async() => {
 
         addRepoIntercept();
 
@@ -210,6 +210,26 @@ describe.sequential("getRepoList", context => {
             { filePath: "somefolder/", conflict: false },
             { filePath: "README.md", conflict: false },
             { filePath: "somefolder/yoohoo.html", conflict: false },
+        ]);
+    });
+
+    it("includes only files that match the provided regular expression", async() => {
+        
+        addRepoIntercept();
+    
+        const owner = "bn-l";
+        const repo = "repo"
+    
+        const ghe = new GithubExtractor({ owner, repo });
+    
+        const include = new RegExp('somefile.txt|README.md');
+    
+        const list = await ghe.list({ include });
+    
+        expect(list).toHaveLength(2);
+        expect(list).to.have.deep.members([
+            { filePath: "somefile.txt", conflict: false },
+            { filePath: "README.md", conflict: false },
         ]);
     });
 
