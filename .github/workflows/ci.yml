@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
 
-  # ! un comment when finished 
+  # ! uncomment when finished setting up
   # check-workflow-files:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -34,15 +34,6 @@ jobs:
   #       run: exit 1
   #       if: steps.changes.outputs.workflow == 'true'
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install
-        run: npm ci
-      - name: Lint
-        run: npm run lint
-
   test:
     runs-on: ${{ matrix.os }}
 
@@ -55,15 +46,20 @@ jobs:
           - macos-latest
           - windows-latest
           - windows-2019
-        node:
-          - version: 18
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
 
       - name: Install
         run: npm ci
+
+      - name: Lint
+        run: npm run lint
 
       - name: Test Non Online
         run: npm run test
