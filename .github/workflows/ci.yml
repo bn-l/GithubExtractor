@@ -58,7 +58,7 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Lint
+      - name: Lint 
         run: npm run lint
 
       - name: Test Non Online
