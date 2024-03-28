@@ -88,11 +88,15 @@ interface DownloadToOptions {
      * @example
      * ["README.md", ".github/workflows/ci.yml"]
      */
-    selectedPaths?: string[]; 
+    selectedPaths?: string[];
     /**
-     * Options for the tar.extract stream.
+     * Include everything matching the regular expression. To exclude use negated regex.
      */
-    extractOptions?: tar.ExtractOptions;
+    include?: RegExp;
+    /**
+     * Pass through options for the tar.extract stream.
+     */
+    extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "strip" | "onentry" | "C">;
 }
 
 export class GithubExtractor {
@@ -210,6 +214,7 @@ export class GithubExtractor {
         }
         return typos;
     }
+    
 
     /**
      * Download a repo to a certain location (`dest`)
@@ -236,7 +241,7 @@ export class GithubExtractor {
      * ```
      */
     public async downloadTo(
-        { dest, selectedPaths, extractOptions }: DownloadToOptions
+        { dest, selectedPaths, extractOptions, include }: DownloadToOptions
     ) {
         const selectedSet = selectedPaths ? 
             this.normalizePathSet(new Set(selectedPaths)) :
@@ -255,6 +260,9 @@ export class GithubExtractor {
                     cwd: dest,
                     strip: 1,
                     filter: (fPath) => {
+                        
+                        if (include && !include.test(fPath)) return false;
+
                         fPath = this.normalizeTarPath(fPath);
                         
                         if (!fPath) return false;

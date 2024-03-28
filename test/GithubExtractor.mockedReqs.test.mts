@@ -509,5 +509,100 @@ describe.sequential("downloadTo", context => {
     
     });
 
+    it("correctly ignores non matching cased paths when caseInsensitive is false", async() => {
+
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const selectedPath = "SOMEFoLdEr/YOOHOO.html";
+
+        const ghe = new GithubExtractor({ owner, repo, caseInsensitive: false });
+
+        await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath] });
+
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedPath }`)).toThrow();
+    });
+
+    it("correctly selects non matching cased paths when caseInsensitive is true", async() => {
+
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo, caseInsensitive: true });
+
+        const selectedPath = "SOMEFoLdEr/YOOHOO.html";
+        await ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: [selectedPath] });
+        
+        const selectedNormed = ghe["normalizeFilePath"](selectedPath);
+        expect(() => checkFileExists(`${ TEMP_DIR }/${ selectedNormed }`)).not.toThrow();
+    });
+
+    it("Correctly handles a non tar body", async() => {
+
+        addRepoIntercept();
+
+        const owner = "none";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo });
+
+        const readable = Readable.from(['test']);
+
+        const getTarBodyFake = sinon.fake.resolves({
+            statusCode: 404,
+            body: readable,
+            headers: {
+                "content-type": "text/plain",
+            },
+        });
+
+        ghe["getTarBody"] = getTarBodyFake;
+
+        await expect(ghe.downloadTo({ dest: TEMP_DIR })).rejects.toThrow(/TAR_BAD_ARCHIVE/);
+
+    });
+
+    it("produces the same results as getRepoList", async() => {
+            
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo });
+
+        const list = await ghe.list({ dest: TEMP_DIR, recursive: true });
+        const listFileNames = list.map(({ filePath }) => filePath);
+
+        fs.rmSync(TEMP_DIR, { recursive: true });
+        fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+        await ghe.downloadTo({ dest: TEMP_DIR });
+
+        const dirContents = await ghe.getLocalDirSet(TEMP_DIR);
+
+        expect([...dirContents]).to.have.all.members(listFileNames);
+
+    });
+
+    it("correctly includes files matching the include regex", async() => {
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo });
+
+        await ghe.downloadTo({ dest: TEMP_DIR, include: /.*\.txt$/ });
+
+        expect(() => checkFileExists(`${ TEMP_DIR }/somefile.txt`)).not.toThrow();
+
+        expect(() => checkFileExists(`${ TEMP_DIR }/README.md`)).toThrow();
+    });
+    
 });
 
