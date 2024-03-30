@@ -24,7 +24,11 @@
     "coverage-badge": "tsx scripts/coverage-badge.ts",
     "build:clean": "rimraf ./dist && tsc --build",
     "publish-ci": "tsx scripts/publish-ci.ts",
-    "pub": "npx bumpp"
+    "pub": "npx bumpp",
+    "predocs:dev": "typedoc",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [
     "Github",
@@ -75,15 +79,19 @@
     "eslint-plugin-sort-class-members": "^1.20.0",
     "eslint-plugin-typescript-sort-keys": "^3.2.0",
     "eslint-plugin-unicorn": "^51.0.1",
+    "favicons": "^7.2.0",
     "rimraf": "^5.0.5",
     "simple-git": "^3.23.0",
     "sinon": "^17.0.1",
     "tinybench": "^2.6.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.7.1",
+    "typedoc": "^0.25.12",
+    "typedoc-vitepress-theme": "^1.0.0-next.10",
     "typescript": "^5.3.3",
     "typescript-eslint": "^7.1.0",
-    "vitest": "^1.4.0",
+    "vitepress": "^1.0.1",
+    "vue": "^3.4.21",
     "zx": "^7.2.3"
   },
   "dependencies": {

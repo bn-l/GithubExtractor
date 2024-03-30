@@ -1,3 +1,8 @@
+/** 
+ * The main class
+ * @module
+ */
+
 // import "./shimSet.mjs";
 import { APIFetchError } from "./custom-errors.mjs";
 
@@ -11,18 +16,20 @@ import { request } from "undici";
 import pathe from "pathe";
 
 
-type Typo = [original: string, correction: string];
+export type Typo = [original: string, correction: string];
 
-type ListItem = { filePath: string; conflict: boolean };
+export interface ListItem { 
+    filePath: string; 
+    conflict: boolean; 
+}
 
-
-interface GithubExtractorOptions {
+export interface GithubExtractorOptions {
     /**
-     * "octocat" in https://github.com/octocat/Spoon-Knife                 
+     * E.g. "octocat" in https://github.com/octocat/Spoon-Knife                 
      */
     owner: string; 
     /**
-     * "Spoon-Knife" in https://github.com/octocat/Spoon-Knife                 
+     * E.g. "Spoon-Knife" in https://github.com/octocat/Spoon-Knife                 
      */
     repo: string; 
     /**
@@ -35,7 +42,7 @@ interface GithubExtractorOptions {
 
 const CONFLICT_COLOR = chalk.hex("#d20f39");
 
-interface ListStreamOptions {
+export interface ListStreamOptions {
     /**
      * The stream to write the repo paths to for visual output as the list is being created.
      *  by default it will write to the console.
@@ -55,7 +62,7 @@ interface ListStreamOptions {
     newLine?: boolean;
 }
 
-interface ListOptions {
+export interface ListOptions {
     /**
      * The destination directory for the repo's files. Used to detect conflicts
      * and must be set if any conflict option is set.
@@ -81,7 +88,7 @@ interface ListOptions {
     include?: RegExp;
 }
 
-interface DownloadToOptions {
+export interface DownloadToOptions {
     /**
      * Destination to download the files into. Warning: it will overwrite any existing files 
      * by default unless extractOptions are set.
@@ -103,16 +110,23 @@ interface DownloadToOptions {
     extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "strip" | "onentry" | "C">;
 }
 
+
+/**
+ * The main class
+ */
 export class GithubExtractor {
 
     public caseInsensitive: GithubExtractorOptions["caseInsensitive"];
-    public debug: boolean = false;
+
     public owner: GithubExtractorOptions["owner"];
     public repo: GithubExtractorOptions["repo"];
-    
+
+    protected debug: boolean = false;
     protected requestFn: typeof request = request;
     
-
+    /**
+     * @param options - The options for the GithubExtractor. See {@link GithubExtractorOptions}.
+     */
     constructor(
         { owner, repo, caseInsensitive }: GithubExtractorOptions
     ) {
@@ -139,7 +153,6 @@ export class GithubExtractor {
         const normalized = values.map(filePath => this.normalizeFilePath(filePath));
         return new Set(normalized);
     }
-
 
     protected async handleBadResponseCode(res: Awaited<ReturnType<typeof this.makeRequest>>): Promise<never> {
 
@@ -223,10 +236,13 @@ export class GithubExtractor {
     /**
      * Download a repo to a certain location (`dest`)
      * 
+     * @param options
+     * 
      * @returns - An empty array if all `selectedPaths` were found / there were no `selectedPaths`
      *  given OR an array of possible typos if some of the `selectedPaths` were not found.
      * 
-     * @example 
+     * @example - 
+     * 
      * ```typescript
      * await ghe.downloadTo({ dest: "some/path" });
      * ```
@@ -354,6 +370,8 @@ export class GithubExtractor {
     /**
      * Returns a list of files in the repo and writes to (by default) stdout (console.log). Supply
      * an object with options to change defaults.
+     * 
+     * @param options
      * 
      * @example
      * ```typescript

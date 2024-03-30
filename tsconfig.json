@@ -8,6 +8,7 @@
             "DOM",
             "ES2022",
         ],
+        "experimentalDecorators": true,
         "baseUrl": ".",
         "allowJs": true,
         "skipLibCheck": true,
