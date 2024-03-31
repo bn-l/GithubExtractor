@@ -13,7 +13,7 @@
     "title.indexPage": "API Reference",
     "title.memberPage": "{name}"
   },
+  "disableSources": true,
   "out": "./docs/api",
   "docsRoot": "./docs",
-  "media": "./media",
 }

@@ -19,10 +19,6 @@ different to SOMEPATH/somefile.js.
 false
 ```
 
-#### Source
-
-[source/GithubExtractor.mts:40](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L40)
-
 ***
 
 ### owner
@@ -33,10 +29,6 @@ owner: string;
 
 E.g. "octocat" in https://github.com/octocat/Spoon-Knife
 
-#### Source
-
-[source/GithubExtractor.mts:30](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L30)
-
 ***
 
 ### repo
@@ -46,7 +38,3 @@ repo: string;
 ```
 
 E.g. "Spoon-Knife" in https://github.com/octocat/Spoon-Knife
-
-#### Source
-
-[source/GithubExtractor.mts:34](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L34)

@@ -16,15 +16,11 @@ new GithubExtractor(options): GithubExtractor
 
 • **options**: [`GithubExtractorOptions`](../interfaces/GithubExtractorOptions.md)
 
-The options for the GithubExtractor. See [GithubExtractorOptions](../interfaces/GithubExtractorOptions.md).
+Main class constructor options.
 
 #### Returns
 
 [`GithubExtractor`](GithubExtractor.md)
-
-#### Source
-
-[source/GithubExtractor.mts:130](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L130)
 
 ## Properties
 
@@ -34,10 +30,6 @@ The options for the GithubExtractor. See [GithubExtractorOptions](../interfaces/
 caseInsensitive: undefined | boolean;
 ```
 
-#### Source
-
-[source/GithubExtractor.mts:119](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L119)
-
 ***
 
 ### owner
@@ -46,10 +38,6 @@ caseInsensitive: undefined | boolean;
 owner: string;
 ```
 
-#### Source
-
-[source/GithubExtractor.mts:121](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L121)
-
 ***
 
 ### repo
@@ -57,10 +45,6 @@ owner: string;
 ```ts
 repo: string;
 ```
-
-#### Source
-
-[source/GithubExtractor.mts:122](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L122)
 
 ## Methods
 
@@ -85,13 +69,13 @@ Download a repo to a certain location (`dest`)
 
 #### Example
 
+Basic usage:
 ```typescript
 await ghe.downloadTo({ dest: "some/path" });
 ```
-Using `selectedPaths`:
-Downloads only the paths in the repo specified. Do not prefix with repo name. It will 
-stop downloading once it has the file. This can make getting a single file from a large 
-repo very fast.
+To only download some paths: \
+Do not prefix path with repo name. It will stop downloading once it has the file 
+(this can make getting a single file from a large repo very fast).
 
 ```typescript
 // Save just `boo.jpg`:
@@ -101,10 +85,6 @@ await ghe.downloadTo({ dest: "some/path", selectedPaths: ["someFolder/boo.jpg"] 
 await ghe.downloadTo({ dest: "some/path", selectedPaths: ["README.md"] });
    
 ```
-
-#### Source
-
-[source/GithubExtractor.mts:263](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L263)
 
 ***
 
@@ -129,10 +109,6 @@ default true
 #### Returns
 
 `Promise`\<`Set`\<`string`\>\>
-
-#### Source
-
-[source/GithubExtractor.mts:323](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L323)
 
 ***
 
@@ -165,7 +141,3 @@ const topLevel = await ghe.list({ recursive: false });
 const conflicts = await ghe.list({ dest: "some/path", conflictsOnly: true });
    
 ```
-
-#### Source
-
-[source/GithubExtractor.mts:388](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L388)

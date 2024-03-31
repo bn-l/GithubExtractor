@@ -1,7 +1,10 @@
 {
   "name": "github-extractor",
+  "longName": "GithubExtractor",
   "version": "0.0.12",
-  "description": "Github Extractor: List or download a whole repo or specific files and folders very quickly",
+  "description": "List or download a whole repo or specific files and folders very quickly",
+  "summary": "List and extract from github repos",
+  "tagline": "Better than clone depth=1",
   "main": "./dist/source/index.mjs",
   "files": [
     "dist/**/*"
@@ -10,7 +13,7 @@
   "homepage": "https://github.com/bn-l/GithubExtractor#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bn-l/GithubExtractor.git"
+    "url": "https://github.com/bn-l/GithubExtractor.git"
   },
   "scripts": {
     "start:dev": "ts-node",
@@ -25,7 +28,8 @@
     "build:clean": "rimraf ./dist && tsc --build",
     "publish-ci": "tsx scripts/publish-ci.ts",
     "pub": "npx bumpp",
-    "predocs:dev": "typedoc",
+    "predocs:dev": "typedoc && npx tsx scripts/docs-helper.mts",
+    "predocs:build": "typedoc && npx tsx scripts/docs-helper.mts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
@@ -58,7 +62,7 @@
     "shallow"
   ],
   "author": "bn-l",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@stylistic/eslint-plugin": "^1.6.3",
     "@swc/core": "^1.3.101",

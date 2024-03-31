@@ -1,26 +1,55 @@
 import { defineConfig } from "vitepress";
 import typedocSidebar from "../api/typedoc-sidebar.json";
+import packageConfig from "../../getConfig.mjs";
+import path from "node:path";
 
 
-const base = "/GithubExtractor/";
-const favicon = "logo-mini.png";
-const logo = "logo-med-bg.png";
+const { longName, repoUrl, description, license, summary, tagline } = packageConfig;
+
+const parsedUrl = new URL(repoUrl);
+const lastPart = path.basename(parsedUrl.pathname).replace(".git", "");
+
+const base = "/" + lastPart + "/";
+const favicon = "logo-48.png";
+const logo = "logo-205.png";
+const heroImage = "logo-2048.webp";
 const year = new Date().getFullYear();
-const licence = "MIT";
 
+const heroActions = [
+    { theme: 'brand', text: 'API Docs', link: '/api/index/' },
+    { theme: 'alt', text: 'Quickstart', link: '/quickstart.md' },
+    { theme: 'alt', text: 'Github', link: repoUrl }
+];
+
+
+const features = [
+    {
+        "icon": "🤔",
+        "title": "Selective",
+        "details": "Download whole repos or individual files. Select using globs or multiple paths."
+    },
+    {
+        "icon": "🤓",
+        "title": "Fast",
+        "details": "Doesn't download the whole repo for just a few files, and ~200% faster than clone depth=1 for a whole repo."
+    },
+    {
+        "icon": "🐇",
+        "title": "Learn more",
+        "linkText": "Get started",
+        "link": "./quickstart"
+    }
+]
 
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-    title: "My Docs",
-    description: "This is my custom documentation site.",
+    title: longName,
+    description,
     base,
-    head: [
-        ['link', { rel: "icon", type: "image/png", href: `${base}api/media/${favicon}` }]
-    ],
     themeConfig: {
         // https://vitepress.dev/reference/default-theme-config
-        logo: { src: `/api/media/${logo}`, alt: "GithubExtractor" },
+        logo: { src: `/${logo}`, alt: longName },
         search: {
             provider: "local",
         },
@@ -31,7 +60,7 @@ export default defineConfig({
         aside: true,
         nav: [
             { text: "Home", link: "/" },
-            { text: "API", link: "/api/",  },
+            { text: "API", link: "/api/index/",  },
         ],
         docFooter: {
             prev: false,
@@ -40,22 +69,60 @@ export default defineConfig({
         sidebar: [
             {
                 text: "API",
-                link: "/api/",
+                link: "/api/index/",
                 items: typedocSidebar,
                 collapsed: false,
+            },
+            {
+                text: "Quickstart",
+                link: "/quickstart",
             },
         ],
         socialLinks: [
             {
                 icon: "github",
-                link: "https://github.com/",
-                ariaLabel: "Link to the GithubExtractor github repo"
+                link: repoUrl,
+                ariaLabel: `Link to the ${longName} github repo`
             },
         ],
         footer: {
-            message: `Released under the ${licence} License.`,
+            message: `Released under the ${license} License.`,
             copyright: `Copyright © ${year} bn-l`
         },
-
     },
+    // https://vitepress.dev/reference/site-config#transformpagedata
+    // don't mutate siteConfig
+    transformPageData(pageData, { siteConfig }) {
+        if(pageData.frontmatter.layout === "home") {
+            pageData.frontmatter = {
+                ...pageData.frontmatter,
+                hero: {
+                    name: longName,
+                    text: summary,
+                    tagline,
+                    image: {
+                        src: `/${heroImage}`,
+                        alt: longName
+                    },
+                    actions: heroActions
+                },
+                features
+            };
+        }
+    },
+    head: [
+        ['link', { rel: "icon", type: "image/png", href: base + favicon }],
+        [
+          'script',
+          { async: '', src: `https://www.googletagmanager.com/gtag/js?id=G-C50L7SYJ2S` }
+        ],
+        [
+          'script',
+          {},
+          `window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-C50L7SYJ2S');`
+        ]
+    ]
 });

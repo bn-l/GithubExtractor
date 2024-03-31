@@ -1,9 +1,33 @@
 :root {
-    --vp-c-brand-1: #445F6E;
+
+
+
+    /* --vp-custom-block-font-size: 1px; */
+
+    /* --vp-c-brand-1: #445F6E; */
     --vp-c-brand-2: #6FC9D9;
-    --vp-c-brand-3: #44A69C;
-    --vp-c-brand-4: #445F6E;
+    /* --vp-c-brand-3: #445F6E; */
+    --vp-c-brand-4: #44A69C;
     --vp-c-brand-5: #7CD6E6;
     --vp-home-hero-name-color: transparent;
-    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, var(--vp-c-brand-1), var(--vp-c-brand-2));
+    --vp-home-hero-name-background: linear-gradient(120deg, var(--vp-c-brand-1), var(--vp-c-brand-2));
+    
+    /* --vp-home-hero-image-filter: blur(62px); */
+    /* --vp-home-hero-image-background-image: linear-gradient(220deg, #445F6E, #6FC9D9); */
+
+    .VPHomeHero .image img {
+        filter: drop-shadow(-5px 7px 70px #6fc9d953);
+    }
 }
+
+.vp-doc {
+    font-size: 1.6ex;
+}
+
+#local-search {
+    /* filter: drop-shadow(0 0 4px var(--vp-c-brand-2)); */
+    filter: drop-shadow(1px 1px 1px var(--vp-c-brand-2));
+}
+
+
+/* #VPContent > div > div > div.content > div > main > div > div > p:nth-child(9) */

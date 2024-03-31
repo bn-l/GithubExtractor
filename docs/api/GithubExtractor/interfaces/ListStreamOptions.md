@@ -19,10 +19,6 @@ Whether to use ascii escape characters to highlight conflicts when writing to th
 true
 ```
 
-#### Source
-
-[source/GithubExtractor.mts:57](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L57)
-
 ***
 
 ### newLine?
@@ -38,10 +34,6 @@ Include new line at the end of each listed repo path.
 ```ts
 true
 ```
-
-#### Source
-
-[source/GithubExtractor.mts:62](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L62)
 
 ***
 
@@ -59,7 +51,3 @@ The stream to write the repo paths to for visual output as the list is being cre
 ```ts
 process.stdout
 ```
-
-#### Source
-
-[source/GithubExtractor.mts:51](https://github.com/bn-l/GithubExtractor/blob/0fe9471/source/GithubExtractor.mts#L51)

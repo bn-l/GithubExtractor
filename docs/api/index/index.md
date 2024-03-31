@@ -2,6 +2,8 @@
 
 # index
 
+default export and entry point
+
 ## References
 
 ### default

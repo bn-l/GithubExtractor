@@ -125,7 +125,7 @@ export class GithubExtractor {
     protected requestFn: typeof request = request;
     
     /**
-     * @param options - The options for the GithubExtractor. See {@link GithubExtractorOptions}.
+     * @param options - Main class constructor options.
      */
     constructor(
         { owner, repo, caseInsensitive }: GithubExtractorOptions
@@ -241,15 +241,15 @@ export class GithubExtractor {
      * @returns - An empty array if all `selectedPaths` were found / there were no `selectedPaths`
      *  given OR an array of possible typos if some of the `selectedPaths` were not found.
      * 
-     * @example - 
+     * @example
      * 
+     * Basic usage:
      * ```typescript
      * await ghe.downloadTo({ dest: "some/path" });
      * ```
-     * Using `selectedPaths`:
-     * Downloads only the paths in the repo specified. Do not prefix with repo name. It will 
-     * stop downloading once it has the file. This can make getting a single file from a large 
-     * repo very fast.
+     * To only download some paths: \
+     * Do not prefix path with repo name. It will stop downloading once it has the file 
+     * (this can make getting a single file from a large repo very fast).
      * 
      * ```typescript
      * // Save just `boo.jpg`:
