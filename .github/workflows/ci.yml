@@ -72,7 +72,7 @@ jobs:
         #   cache: 'npm'
 
       - name: Install
-        run: npm i
+        run: npm ci
         
       - name: Test Non Online
         run: npm run test
