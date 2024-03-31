@@ -9,7 +9,7 @@
 
 List github repositories and download individual files or whole repos. ~200% faster than clone depth=1 for an entire repo and much, much faster if you just need a single file.
 
-[Api Documentation](./api/index/)
+[Api Documentation](https://bn-l.github.io/GithubExtractor/api/index/)
  
 <div align="center" style="display: flex; justify-content: center; gap: 10px;">
 <img src="https://github.com/bn-l/GithubExtractor/actions/workflows/ci.yml/badge.svg" alt="Continuous Integration status badge">   <a href="coverage/coverage.txt"><img src="./media/coverage-badge.svg" alt="Code coverage badge"></a>  <a href="https://github.com/bn-l/GithubExtractor/issues"><img src="https://img.shields.io/github/issues/bn-l/GithubExtractor" alt="GitHub issues badge"></a>  <a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request"> <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="Pull requests welcome badge"> </a>
