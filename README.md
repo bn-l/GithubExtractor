@@ -7,7 +7,7 @@
 
 
 
-List github repositories and download individual files or whole repos. ~200% faster than clone depth=1 for an entire repo and much, much faster if you just need a single file.
+List github repositories and download individual files or whole repos conveniently. Faster than clone depth=1 for an entire repo and much faster if you just need a single file
 
 [Api Documentation](https://bn-l.github.io/GithubExtractor/api/index/)
  
