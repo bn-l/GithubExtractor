@@ -292,7 +292,9 @@ export class GithubExtractor {
                         }
                         selectedSet?.delete(fPath);
 
-                        if (match && !match.every(re => re.test(fPath))) return false;
+                        if (match?.length && !match.every(re => re.test(fPath))) { 
+                            return false;
+                        }
                         return true;
                     },
                     onentry: (entry) => {
@@ -410,7 +412,7 @@ export class GithubExtractor {
         };
 
         const filter = (path: string) => {
-            if (match && !match.every(re => re.test(path))) {
+            if (match?.length && !match.every(re => re.test(path))) {
                 return false;
             }
             // Length <= 2 to account for pre normalization where the archive name isn't
