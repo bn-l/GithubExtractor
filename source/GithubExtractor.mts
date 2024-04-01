@@ -83,7 +83,7 @@ export interface ListOptions {
      */
     streamOptions?: ListStreamOptions;
     /**
-     * Include everything matching the regular expression. To exclude use negated regex.
+     * Include everything matching the regular expression. To exclude use negated regex. 
      */
     include?: RegExp;
 }
@@ -101,7 +101,8 @@ export interface DownloadToOptions {
      */
     selectedPaths?: string[];
     /**
-     * Include everything matching the regular expression. To exclude use negated regex.
+     * Include everything matching the regular expression. To exclude use negated regex. If selected set is given, it will operate on selected
+     * only.
      */
     include?: RegExp;
     /**
@@ -281,8 +282,6 @@ export class GithubExtractor {
                     strip: 1,
                     filter: (fPath) => {
                         
-                        if (include && !include.test(fPath)) return false;
-
                         fPath = this.normalizeTarPath(fPath);
                         
                         if (!fPath) return false;
@@ -292,6 +291,8 @@ export class GithubExtractor {
                             return false;
                         }
                         selectedSet?.delete(fPath);
+
+                        if (include && !include.test(fPath)) return false;
                         return true;
                     },
                     onentry: (entry) => {
