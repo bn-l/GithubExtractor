@@ -264,7 +264,7 @@ export class GithubExtractor {
     public async downloadTo(
         { dest, selectedPaths, extractOptions, match }: DownloadToOptions
     ) {
-        const selectedSet = selectedPaths ? 
+        const selectedSet = selectedPaths?.length ? 
             this.normalizePathSet(new Set(selectedPaths)) :
             undefined;
 
