@@ -83,9 +83,9 @@ export interface ListOptions {
      */
     streamOptions?: ListStreamOptions;
     /**
-     * Include everything matching the regular expression. To exclude use negated regex. 
+     * Must match every regular expression if given.
      */
-    include?: RegExp;
+    match?: RegExp[];
 }
 
 export interface DownloadToOptions {
@@ -101,10 +101,10 @@ export interface DownloadToOptions {
      */
     selectedPaths?: string[];
     /**
-     * Include everything matching the regular expression. To exclude use negated regex. If selected set is given, it will operate on selected
-     * only.
+     * Must match every regular expression if given. If {@link selectedPaths} is given, it 
+     * will operate on selected only.
      */
-    include?: RegExp;
+    match?: RegExp[];
     /**
      * Pass through options for the tar.extract stream.
      */
@@ -262,7 +262,7 @@ export class GithubExtractor {
      * ```
      */
     public async downloadTo(
-        { dest, selectedPaths, extractOptions, include }: DownloadToOptions
+        { dest, selectedPaths, extractOptions, match }: DownloadToOptions
     ) {
         const selectedSet = selectedPaths ? 
             this.normalizePathSet(new Set(selectedPaths)) :
@@ -292,7 +292,7 @@ export class GithubExtractor {
                         }
                         selectedSet?.delete(fPath);
 
-                        if (include && !include.test(fPath)) return false;
+                        if (match && !match.every(re => re.test(fPath))) return false;
                         return true;
                     },
                     onentry: (entry) => {
@@ -387,7 +387,7 @@ export class GithubExtractor {
      * ```
      */
     public async list(
-        { dest, conflictsOnly = false, recursive = true, streamOptions = {}, include }: ListOptions = {}
+        { dest, conflictsOnly = false, recursive = true, streamOptions = {}, match }: ListOptions = {}
     ): Promise<ListItem[]> {
         
         const repoList: ListItem[] = [];
@@ -410,7 +410,7 @@ export class GithubExtractor {
         };
 
         const filter = (path: string) => {
-            if (include && !include.test(path)) {
+            if (match && !match.every(re => re.test(path))) {
                 return false;
             }
             // Length <= 2 to account for pre normalization where the archive name isn't
