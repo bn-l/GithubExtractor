@@ -8,7 +8,8 @@ export type {
     GithubExtractorOptions,
     ListOptions,
     ListStreamOptions,
-    ListItem
+    ListItem,
+    Typo
 } from "./GithubExtractor.mjs";
 
 export {
