@@ -85,7 +85,7 @@ export interface ListOptions {
     /**
      * Must match every regular expression if given.
      */
-    match?: RegExp[];
+    match?: RegExp;
 }
 
 export interface DownloadToOptions {
@@ -104,9 +104,10 @@ export interface DownloadToOptions {
      * Must match every regular expression if given. If {@link selectedPaths} is given, it 
      * will operate on selected only.
      */
-    match?: RegExp[];
+    match?: RegExp;
     /**
-     * Pass through options for the tar.extract stream.
+     * Pass through options for the tar.extract stream. Not very important
+     *  but here for completeness.
      */
     extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "strip" | "onentry" | "C">;
 }
@@ -292,7 +293,7 @@ export class GithubExtractor {
                         }
                         selectedSet?.delete(fPath);
 
-                        if (match?.length && !match.every(re => re.test(fPath))) { 
+                        if (match && !match.test(fPath)) { 
                             return false;
                         }
                         return true;
@@ -412,7 +413,7 @@ export class GithubExtractor {
         };
 
         const filter = (path: string) => {
-            if (match?.length && !match.every(re => re.test(path))) {
+            if (match && !match.test(path)) {
                 return false;
             }
             // Length <= 2 to account for pre normalization where the archive name isn't

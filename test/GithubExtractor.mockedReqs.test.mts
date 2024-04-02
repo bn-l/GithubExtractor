@@ -222,7 +222,7 @@ describe.sequential("getRepoList", context => {
     
         const ghe = new GithubExtractor({ owner, repo });
     
-        const match = [new RegExp('somefile.txt|README.md')];
+        const match = new RegExp('somefile.txt|README.md');
     
         const list = await ghe.list({ match });
     
@@ -617,7 +617,7 @@ describe.sequential("downloadTo", context => {
 
         const ghe = new GithubExtractor({ owner, repo });
 
-        await ghe.downloadTo({ dest: TEMP_DIR, match: [/.*\.txt$/] });
+        await ghe.downloadTo({ dest: TEMP_DIR, match: /.*\.txt$/ });
 
         expect(() => checkFileExists(`${ TEMP_DIR }/somefile.txt`)).not.toThrow();
 
