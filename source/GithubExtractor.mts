@@ -413,15 +413,14 @@ export class GithubExtractor {
         };
 
         const filter = (path: string) => {
+            path = this.normalizeTarPath(path);
+
             if (match && !match.test(path)) {
                 return false;
             }
-            // Length <= 2 to account for pre normalization where the archive name isn't
-            //  isn't removed. So anything with more than two parts in the path is not first level.
-            // path.slice(1, -1): slice starting at 1 takes care of a "/" prefix,
-            //  ending at -1 removes trailing "/". Now if there's two members in the 
-            //  resulting array, we know it's a nested path
-            return recursive || path.slice(1, -1).split("/").length <= 2;
+            // path.slice(1, -1): removes "/" from start and end. Now if there's 
+            // more than one member after the split, we know it's nested.
+            return recursive || path.slice(1, -1).split("/").length > 1;
         };
 
         const { body } = await this.getTarBody();
