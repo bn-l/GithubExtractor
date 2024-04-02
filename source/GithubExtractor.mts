@@ -194,7 +194,7 @@ export class GithubExtractor {
         }
         catch (error) {
             // @ts-expect-error no guard
-            throw new FetchError(`Error getting repo ${ this.owner }/${ this.repo }: ${ error?.message }`);
+            throw new FetchError(`Error getting repo '${ this.owner }/${ this.repo }': ${ error?.message }`);
         }
     }
 
