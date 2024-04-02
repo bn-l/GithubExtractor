@@ -3,4 +3,18 @@
  * @module
  */
 
+export type {
+    DownloadToOptions,
+    GithubExtractorOptions,
+    ListOptions,
+    ListStreamOptions,
+    ListItem
+} from "./GithubExtractor.mjs";
+
+export {
+    FetchError,
+    FileConflictError,
+    MissingInJSONError
+} from "./custom-errors.mjs";
+
 export { GithubExtractor as default } from "./GithubExtractor.mjs";

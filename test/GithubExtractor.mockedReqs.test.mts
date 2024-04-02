@@ -31,8 +31,6 @@ const mockPool = mockAgent.get("https://codeload.github.com");
 const redirectPool = mockAgent.get("https://github.com");
 
 
-// !! create real online test that tests redirect
-// !! Remove sequential / delays from this`
 
 const addRepoIntercept = () => {
     mockPool.intercept({
