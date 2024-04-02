@@ -138,7 +138,7 @@ export class GithubExtractor {
     }
     
     protected normalizeTarPath(tarPath: string) {
-        // slice off everything after the "/":
+        // Remove everything before the first "/" to remove the repo name:
         //   someprefixdir/somefile.txt -> somefile.txt
         return this.caseInsensitive ? 
             tarPath.slice(tarPath.indexOf("/") + 1).toLowerCase().trim() :
@@ -419,8 +419,8 @@ export class GithubExtractor {
                 return false;
             }
             // path.slice(1, -1): removes "/" from start and end. Now if there's 
-            // more than one member after the split, we know it's nested.
-            return recursive || path.slice(1, -1).split("/").length > 1;
+            // two or more members after the split, we know it's nested.
+            return recursive || path.slice(1, -1).split("/").length < 2;
         };
 
         const { body } = await this.getTarBody();
