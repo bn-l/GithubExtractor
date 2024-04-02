@@ -11,7 +11,7 @@ vi.mock("undici", async(originalImport) => {
 });
 
 import { GithubExtractor } from "../source/GithubExtractor.mjs";
-import { APIFetchError } from "../source/custom-errors.mjs";
+import { FetchError } from "../source/custom-errors.mjs";
 
 import { request, MockAgent, setGlobalDispatcher, } from "undici";
 import fs from "node:fs";

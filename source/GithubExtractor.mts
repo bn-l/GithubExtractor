@@ -4,7 +4,7 @@
  */
 
 // import "./shimSet.mjs";
-import { APIFetchError } from "./custom-errors.mjs";
+import { FetchError } from "./custom-errors.mjs";
 
 import chalk from "chalk";
 import { closest } from "fastest-levenshtein";
@@ -167,10 +167,10 @@ export class GithubExtractor {
                 Math.ceil((resetInDateNum * 1000) - (Date.now() / 1000 / 60)) :
                 undefined;
 
-            throw new APIFetchError("Rate limit exceeded" + (wait ? `Please wait ${ wait } minutes` : ""));
+            throw new FetchError("Rate limit exceeded" + (wait ? `Please wait ${ wait } minutes` : ""));
         }
 
-        throw new APIFetchError(`Error getting response from github StatusCode: ${ res.statusCode }. ` + (this.debug ? `Url: ${ res.url }\nHeaders:\n${ JSON.stringify(res.headers, null, 2) },\nBody:\n${ (await res.body.text()).slice(0, 2000) }` : ""));
+        throw new FetchError(`Error getting response from github StatusCode: ${ res.statusCode }. ` + (this.debug ? `Url: ${ res.url }\nHeaders:\n${ JSON.stringify(res.headers, null, 2) },\nBody:\n${ (await res.body.text()).slice(0, 2000) }` : ""));
     }
 
     protected async makeRequest(url: string) {
@@ -194,7 +194,7 @@ export class GithubExtractor {
         }
         catch (error) {
             // @ts-expect-error no guard
-            throw new APIFetchError(`Error getting ${ this.owner }/${ this.repo } from github: ${ error?.message }`);
+            throw new FetchError(`Error getting ${ this.owner }/${ this.repo } from github: ${ error?.message }`);
         }
     }
 

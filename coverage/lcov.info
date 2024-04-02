@@ -557,13 +557,13 @@ SF:source\custom-errors.mts
 FN:2,<instance_members_initializer>
 FN:5,FileConflictError
 FN:19,MissingInJSONError
-FN:32,APIFetchError
+FN:32,FetchError
 FNF:4
 FNH:4
 FNDA:1,<instance_members_initializer>
 FNDA:1,FileConflictError
 FNDA:1,MissingInJSONError
-FNDA:10,APIFetchError
+FNDA:10,FetchError
 DA:1,1
 DA:2,1
 DA:3,1

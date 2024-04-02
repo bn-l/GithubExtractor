@@ -1,6 +1,6 @@
 
 import { GithubExtractor } from "../source/GithubExtractor.mjs";
-import { APIFetchError } from "../source/custom-errors.mjs";
+import { FetchError } from "../source/custom-errors.mjs";
 
 import { describe, expect, it, vi, beforeEach, afterEach, afterAll, beforeAll, VitestUtils } from "vitest";
 import sinon, { SinonSpy } from "sinon";
@@ -73,7 +73,7 @@ describe("makeRequest and handleBadResponse", () => {
 
         ghe["requestFn"] = fakeReqFn;
             
-        await expect(ghe["makeRequest"]("someurl")).rejects.toThrow(APIFetchError);
+        await expect(ghe["makeRequest"]("someurl")).rejects.toThrow(FetchError);
 
         expect(fakeReqFn.firstCall.args[0]).toBe("someurl");
     });
@@ -100,7 +100,7 @@ describe("makeRequest and handleBadResponse", () => {
             await ghe["makeRequest"]("someurl");
         }
         catch (error) {
-            expect(error).toBeInstanceOf(APIFetchError);
+            expect(error).toBeInstanceOf(FetchError);
             // @ts-expect-error testing
             expect(error.message).toMatch(/Rate limit exceeded/i);
         }
@@ -130,7 +130,7 @@ describe("makeRequest and handleBadResponse", () => {
             await ghe["makeRequest"]("someurl");
         }
         catch (error) {
-            expect(error).toBeInstanceOf(APIFetchError);
+            expect(error).toBeInstanceOf(FetchError);
             // @ts-expect-error testing
             expect(error.message).toMatch(/Rate limit exceeded/i);
         }

@@ -1,6 +1,6 @@
 
 import { describe, expect, it } from "vitest";
-import { FileConflictError, MissingInJSONError, APIFetchError } from '../source/custom-errors.mjs';
+import { FileConflictError, MissingInJSONError, FetchError } from '../source/custom-errors.mjs';
 
 describe('Custom Errors', () => {
     describe('FileConflictError', () => {
@@ -23,12 +23,12 @@ describe('Custom Errors', () => {
         });
     });
 
-    describe('APIFetchError', () => {
+    describe('FetchError', () => {
         it('should correctly set the message', () => {
-            const error = new APIFetchError('API fetch error message');
+            const error = new FetchError('API fetch error message');
 
             expect(error.message).toBe('API fetch error message');
-            expect(error.name).toBe('APIFetchError');
+            expect(error.name).toBe('FetchError');
         });
     });
 });

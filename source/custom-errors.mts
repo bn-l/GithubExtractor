@@ -27,7 +27,7 @@ export class MissingInJSONError extends Error {
     }
 }
 
-export class APIFetchError extends Error {
+export class FetchError extends Error {
 
     constructor(message: string) {
         super(message);
