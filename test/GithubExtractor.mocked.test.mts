@@ -26,6 +26,11 @@ afterEach(() => {
 });
 
 
+// * What this file test: Functionality not involving a tar file. I.e. it tests error 
+// *  handling of bad requests. That the request is actually attempted. etc. It is
+// *  a preliminary to the mockedReqs test which mocks the sending of a tar file over the wire.
+
+
 describe("makeRequest and handleBadResponse", () => {
 
     it("should call request with the right args", async() => {

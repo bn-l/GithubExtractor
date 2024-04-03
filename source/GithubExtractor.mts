@@ -6,6 +6,8 @@
 // import "./shimSet.mjs";
 import { FetchError } from "./custom-errors.mjs";
 
+import type { Dirent } from "node:fs";
+
 import chalk from "chalk";
 import { closest } from "fastest-levenshtein";
 import fsp from "node:fs/promises";
@@ -124,7 +126,7 @@ export class GithubExtractor {
     public repo: GithubExtractorOptions["repo"];
 
     protected debug: boolean = false;
-    protected requestFn: typeof request = request;
+    private requestFn: typeof request = request;
     
     /**
      * @param options - Main class constructor options.
@@ -326,7 +328,17 @@ export class GithubExtractor {
      */
     public async getLocalDirSet(dir: string, recursive = true): Promise<Set<string>> {
 
-        const dirEnts = await fsp.readdir(dir, { withFileTypes: true, recursive });
+        let dirEnts: Dirent[];
+
+        try {
+            dirEnts = await fsp.readdir(dir, { withFileTypes: true, recursive });
+        }
+        catch (error) {
+            if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+                throw new Error(`Directory ${ dir } does not exist.`);
+            }
+            throw error;
+        }
 
         const processed: string[] = [];
         

@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">98.64% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>432/432</span>
+                <span class='fraction'>438/444</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.46% </span>
+                <span class="strong">96.25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>77/79</span>
+                <span class='fraction'>77/80</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">98.64% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>432/432</span>
+                <span class='fraction'>438/444</span>
             </div>
         
             
@@ -495,7 +495,21 @@
 <a name='L430'></a><a href='#L430'>430</a>
 <a name='L431'></a><a href='#L431'>431</a>
 <a name='L432'></a><a href='#L432'>432</a>
-<a name='L433'></a><a href='#L433'>433</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L433'></a><a href='#L433'>433</a>
+<a name='L434'></a><a href='#L434'>434</a>
+<a name='L435'></a><a href='#L435'>435</a>
+<a name='L436'></a><a href='#L436'>436</a>
+<a name='L437'></a><a href='#L437'>437</a>
+<a name='L438'></a><a href='#L438'>438</a>
+<a name='L439'></a><a href='#L439'>439</a>
+<a name='L440'></a><a href='#L440'>440</a>
+<a name='L441'></a><a href='#L441'>441</a>
+<a name='L442'></a><a href='#L442'>442</a>
+<a name='L443'></a><a href='#L443'>443</a>
+<a name='L444'></a><a href='#L444'>444</a>
+<a name='L445'></a><a href='#L445'>445</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -828,6 +842,16 @@
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-yes">20x</span>
@@ -934,6 +958,8 @@
 &nbsp;
 // import "./shimSet.mjs";
 import { FetchError } from "./custom-errors.mjs";
+&nbsp;
+import type { Dirent } from "node:fs";
 &nbsp;
 import chalk from "chalk";
 import { closest } from "fastest-levenshtein";
@@ -1053,7 +1079,7 @@ export class GithubExtractor {
     public repo: GithubExtractorOptions["repo"];
 &nbsp;
     protected debug: boolean = false;
-    protected requestFn: typeof request = request;
+    private requestFn: typeof request = request;
     
     /**
      * @param options - Main class constructor options.
@@ -1099,7 +1125,7 @@ export class GithubExtractor {
             throw new FetchError("Rate limit exceeded" + (wait ? `Please wait ${ wait } minutes` : ""));
         }
 &nbsp;
-        throw new FetchError(`Error getting response from github StatusCode: ${ res.statusCode }. ` + (this.<span class="branch-0 cbranch-no" title="branch not covered" >debug ? `Url: ${ res.url }\nHeaders:\n${ JSON.stringify(res.headers, null, 2) },\nBody:\n${ (await res.body.text()).slice(0, 2000) }` : "</span>"));
+        throw new FetchError(`Bad response from github. StatusCode: ${ res.statusCode }. ` + (this.<span class="branch-0 cbranch-no" title="branch not covered" >debug ? `Url: ${ res.url }\nHeaders:\n${ JSON.stringify(res.headers, null, 2) },\nBody:\n${ (await res.body.text()).slice(0, 2000) }` : "</span>"));
     }
 &nbsp;
     protected async makeRequest(url: string) {
@@ -1123,7 +1149,7 @@ export class GithubExtractor {
         }
         catch (error) {
             // @ts-expect-error no guard
-            throw new FetchError(`Error getting ${ this.owner }/${ this.repo } from github: ${ error?.message }`);
+            throw new FetchError(`Error getting repo '${ this.owner }/${ this.repo }': ${ error?.message }`);
         }
     }
 &nbsp;
@@ -1255,7 +1281,17 @@ export class GithubExtractor {
      */
     public async getLocalDirSet(dir: string, recursive = true): Promise&lt;Set&lt;string&gt;&gt; {
 &nbsp;
-        const dirEnts = await fsp.readdir(dir, { withFileTypes: true, recursive });
+        let dirEnts: Dirent[];
+&nbsp;
+        try {
+            dirEnts = await fsp.readdir(dir, { withFileTypes: true, recursive });
+<span class="branch-0 cbranch-no" title="branch not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >            if (error instanceof Error &amp;&amp; "code" in error &amp;&amp; error.code === "ENOENT") {</span>
+<span class="cstat-no" title="statement not covered" >                throw new Error(`Directory ${ dir } does not exist.`);</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >            throw error;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
 &nbsp;
         const processed: string[] = [];
         
@@ -1366,7 +1402,7 @@ export class GithubExtractor {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-04-02T10:17:00.787Z
+                at 2024-04-03T11:20:49.545Z
             </div>
         <script src="prettify.js"></script>
         <script>
