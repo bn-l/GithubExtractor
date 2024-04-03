@@ -16,7 +16,7 @@ const heroImage = "logo-2048.webp";
 const year = new Date().getFullYear();
 
 const heroActions = [
-    { theme: 'brand', text: 'API Docs', link: '/api/index/' },
+    { theme: 'brand', text: 'API Docs', link: '/api/GithubExtractor/' },
     { theme: 'alt', text: 'Quickstart', link: '/quickstart.md' },
     { theme: 'alt', text: 'Github', link: repoUrl }
 ];

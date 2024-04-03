@@ -10,7 +10,7 @@
     "dist/**/*"
   ],
   "type": "module",
-  "homepage": "https://github.com/bn-l/GithubExtractor#readme",
+  "homepage": "https://bn-l.github.io/GithubExtractor/",
   "repository": {
     "type": "git",
     "url": "https://github.com/bn-l/GithubExtractor.git"
