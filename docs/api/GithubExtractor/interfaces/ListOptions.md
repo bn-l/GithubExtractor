@@ -31,13 +31,13 @@ and must be set if any conflict option is set.
 
 ***
 
-### include?
+### match?
 
 ```ts
-optional include: RegExp;
+optional match: RegExp;
 ```
 
-Include everything matching the regular expression. To exclude use negated regex.
+Must match every regular expression if given.
 
 ***
 

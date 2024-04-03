@@ -26,17 +26,19 @@ optional extractOptions: Omit<ExtractOptions,
 | "C">;
 ```
 
-Pass through options for the tar.extract stream.
+Pass through options for the tar.extract stream. Not very important
+ but here for completeness.
 
 ***
 
-### include?
+### match?
 
 ```ts
-optional include: RegExp;
+optional match: RegExp;
 ```
 
-Include everything matching the regular expression. To exclude use negated regex.
+Must match every regular expression if given. If [selectedPaths](DownloadToOptions.md#selectedpaths) is given, it 
+will operate on selected only.
 
 ***
 

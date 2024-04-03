@@ -1,6 +1,6 @@
 import { defineConfig } from "vitepress";
 import typedocSidebar from "../api/typedoc-sidebar.json";
-import packageConfig from "../../getConfig.mjs";
+import packageConfig from "../../scripts/getConfig.mjs";
 import path from "node:path";
 
 

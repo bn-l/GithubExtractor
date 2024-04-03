@@ -8,6 +8,6 @@
 
 | Class | Description |
 | :------ | :------ |
-| [APIFetchError](classes/APIFetchError.md) | - |
+| [FetchError](classes/FetchError.md) | - |
 | [FileConflictError](classes/FileConflictError.md) | - |
 | [MissingInJSONError](classes/MissingInJSONError.md) | - |

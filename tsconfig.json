@@ -51,7 +51,7 @@
         "test",
         "bench",
         "types",
-        "getConfig.mts"
+        "scripts/getConfig.mts"
     ],
     "plugins": [
 

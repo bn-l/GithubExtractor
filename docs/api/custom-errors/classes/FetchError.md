@@ -1,6 +1,6 @@
-[github-extractor](../../index.md) / [custom-errors](../index.md) / APIFetchError
+[github-extractor](../../index.md) / [custom-errors](../index.md) / FetchError
 
-# APIFetchError
+# FetchError
 
 ## Extends
 
@@ -8,10 +8,10 @@
 
 ## Constructors
 
-### new APIFetchError(message)
+### new FetchError(message)
 
 ```ts
-new APIFetchError(message): APIFetchError
+new FetchError(message): FetchError
 ```
 
 #### Parameters
@@ -20,7 +20,7 @@ new APIFetchError(message): APIFetchError
 
 #### Returns
 
-[`APIFetchError`](APIFetchError.md)
+[`FetchError`](FetchError.md)
 
 #### Overrides
 
