@@ -303,19 +303,26 @@ export class GithubExtractor {
                     onentry: (entry) => {
                         entry.on("end", () => {
                             if (selectedSet?.size === 0) {
-                                controller.abort();
+                                controller.abort("finished");
                             }
                         });
                     },
                 })
             );
-
-            // if we still haven't struck out all the paths, there might be typos
-            return selectedSet?.size ? this.handleTypos({ pathList: internalList, selectedSet }) : [];
-        } 
+        }
+        catch (error) {
+            if (controller?.signal?.aborted) {
+                // pass
+            }
+            else {
+                throw error;
+            }
+        }
         finally {
             body.destroy();
         }
+
+        return selectedSet?.size ? this.handleTypos({ pathList: internalList, selectedSet }) : [];
     }
 
     /**

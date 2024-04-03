@@ -18,7 +18,8 @@ const year = new Date().getFullYear();
 const heroActions = [
     { theme: 'brand', text: 'API Docs', link: '/api/GithubExtractor/' },
     { theme: 'alt', text: 'Quickstart', link: '/quickstart.md' },
-    { theme: 'alt', text: 'Github', link: repoUrl }
+    { theme: 'alt', text: 'Github', link: repoUrl },
+    { theme: 'alt', text: 'CLI', link: "./cli" },
 ];
 
 

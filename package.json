@@ -4,7 +4,7 @@
   "version": "0.0.27",
   "description": "List github repositories and download individual files or whole repos conveniently. Faster than clone depth=1 for an entire repo and much faster if you just need a single file",
   "summary": "List and download repositories or individual files quickly",
-  "tagline": "Better than clone depth=1",
+  "tagline": "Better than clone depth=1. Run: npx ghex -h",
   "main": "./dist/source/index.mjs",
   "files": [
     "dist/**/*"
