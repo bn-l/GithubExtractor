@@ -4,5 +4,5 @@ dist/
 .tap/
 .tmp/
 coverage/coverage-summary.json
-.vitepress/cache
-.vitepress/dist
+docs/.vitepress/cache
+docs/.vitepress/dist
