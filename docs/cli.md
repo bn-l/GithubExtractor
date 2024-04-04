@@ -1,18 +1,5 @@
+# CLI Quickstart
 
-# GHEX
-
-Github Extractor CLI
-
-
-
-List github repositories or download individual files or whole repos conveniently. Faster than clone depth=1 for an entire repo and much faster if you just need a single file
-
-See an Asciinema video of usage (including with [fzf](https://github.com/junegunn/fzf)) here: https://bn-l.github.io/GithubExtractor/cli/
- 
-
-
-
-# Quickstart
 
 Install [node](https://nodejs.org/en/download) then:
 
@@ -56,7 +43,7 @@ working directory if -d / --dest is not specified.
 
 Only show conflicts when listing.
 
-### -d, --dest folder  
+### -d, --dest folder   
 
 Destination folder. Defaults to the current directory.
 

@@ -62,6 +62,7 @@ export default defineConfig({
         nav: [
             { text: "Home", link: "/" },
             { text: "API", link: "/api/index/",  },
+            { text: "CLI", link: "/cli",  },
         ],
         docFooter: {
             prev: false,
@@ -77,6 +78,10 @@ export default defineConfig({
             {
                 text: "Quickstart",
                 link: "/quickstart",
+            },
+            {
+                text: "CLI",
+                link: "/cli",
             },
         ],
         socialLinks: [

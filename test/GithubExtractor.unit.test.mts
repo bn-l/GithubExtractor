@@ -235,6 +235,24 @@ describe("writeListItem unit tests", async(context) => {
         expect(stripAnsi(firtCallArgs[0])).toBe("testFile1.txt\n");
     });
 
+    it("writes the prefix and suffix", async() => {
+        const ghe = new GithubExtractor({
+            owner: TEST_OWNER,
+            repo: TEST_REPO,
+        });
+
+        const outputStream = {  write: sinon.fake(), };
+        const listItem = { filePath: "testFile1.txt", conflict: true };
+        const streamOptions = { outputStream, highlightConflicts: true, prefix: "test_prefix_", suffix: "_test_suffix"};
+
+        // @ts-expect-error testing
+        ghe["writeListStream"]({listItem, streamOptions});
+
+        const firtCallArgs = outputStream.write.firstCall.args;
+
+        expect(stripAnsi(firtCallArgs[0])).toBe("test_prefix_testFile1.txt_test_suffix");
+    });
+
 });
 
 

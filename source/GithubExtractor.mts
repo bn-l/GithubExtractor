@@ -58,10 +58,13 @@ export interface ListStreamOptions {
      */
     highlightConflicts?: boolean;
     /**
-     * Include new line at the end of each listed repo path.
-     * @default true
+     * A prefix to add to output. Default is nothing.
      */
-    newLine?: boolean;
+    prefix?: string;
+    /**
+     * Suffix to add to the output. Defaults to a new line
+     */
+    suffix?: string;
 }
 
 export interface ListOptions {
@@ -375,7 +378,7 @@ export class GithubExtractor {
     protected writeListStream(
         { listItem, 
             streamOptions: { 
-                outputStream = process.stdout, highlightConflicts = true, newLine = true, 
+                outputStream = process.stdout, highlightConflicts = true, prefix = "", suffix = "\n",
             }, 
         }: 
         { listItem: ListItem; streamOptions: ListStreamOptions }
@@ -384,10 +387,8 @@ export class GithubExtractor {
         const listString = listItem.conflict && highlightConflicts ?
             CONFLICT_COLOR(listItem.filePath) :
             listItem.filePath;
-        
-        const endOfLineChar = newLine ? "\n" : "";
 
-        outputStream.write(listString + endOfLineChar);
+        outputStream.write(prefix + listString + suffix);
     }
 
     /**
