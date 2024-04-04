@@ -33,11 +33,8 @@ jobs:
       - name: Build
         run: npm run build:clean
 
-      - name: Test Non-Online
-        run: npm test
-
-      - name: Test Online
-        run: npm run test:online
+      - name: Test All
+        run: npm run test:all
 
       - name: Publish to npm
         run: npm run publish-ci ${{ github.ref_name }}

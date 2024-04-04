@@ -115,6 +115,10 @@ export interface DownloadToOptions {
      *  but here for completeness.
      */
     extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "strip" | "onentry" | "C">;
+    /**
+     * Callback for when a file is written. Useful for logging or other operations.
+     */
+    onFileWritten?: (entry: tar.ReadEntry) => void;
 }
 
 
@@ -268,7 +272,7 @@ export class GithubExtractor {
      * ```
      */
     public async downloadTo(
-        { dest, selectedPaths, extractOptions, match }: DownloadToOptions
+        { dest, selectedPaths, extractOptions, match, onFileWritten }: DownloadToOptions
     ) {
         const selectedSet = selectedPaths?.length ? 
             this.normalizePathSet(new Set(selectedPaths)) :
@@ -305,6 +309,7 @@ export class GithubExtractor {
                     },
                     onentry: (entry) => {
                         entry.on("end", () => {
+                            if (onFileWritten) onFileWritten(entry);
                             if (selectedSet?.size === 0) {
                                 controller.abort("finished");
                             }
@@ -313,7 +318,9 @@ export class GithubExtractor {
                 })
             );
         }
+        
         catch (error) {
+            // Istnanbul erroneously doesn't pick up test (see: GithubExtractor.online.test.mts)
             if (controller?.signal?.aborted) {
                 // pass
             }

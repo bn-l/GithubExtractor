@@ -21,6 +21,7 @@
     "test": "vitest --run --coverage --exclude \"**/*online*\"",
     "test:single": "vitest --bail=1",
     "test:online": "vitest online --bail=1",
+    "test:all": "vitest --run --coverage",
     "lint": "npx eslint source --ext .mts",
     "lint:strict": "npx eslint --config ./eslint-strict.json source --ext .mts",
     "build": "tsc --build --incremental",
@@ -70,7 +71,6 @@
     "@types/fs-minipass": "^2.1.4",
     "@types/node": "^20.10.0",
     "@types/sinon": "^17.0.3",
-    "@types/tar": "^6.1.11",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitest/coverage-v8": "^1.4.0",
@@ -99,6 +99,7 @@
     "zx": "^7.2.3"
   },
   "dependencies": {
+    "@types/tar": "^6.1.11",
     "chalk": "^5.3.0",
     "fastest-levenshtein": "^1.0.16",
     "pathe": "^1.1.2",

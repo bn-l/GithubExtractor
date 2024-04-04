@@ -196,6 +196,37 @@ describe("getLocalDirSet unit tests", async(context) => {
         ]));
     });
 
+    it("Correctly handles a non-ENOENT error", async() => {
+
+        const SomeError = new Error("some error")
+        const fakeFsp = sinon.stub(fsp, "readdir").rejects(SomeError);
+
+        const ghe = new GithubExtractor({
+            owner: TEST_OWNER,
+            repo: TEST_REPO,
+            caseInsensitive: true,
+        });
+
+        await expect(ghe.getLocalDirSet("testpath")).rejects.toThrow("some error");
+    });
+
+    it("Correctly handles an ENOENT error", async() => {
+
+        const ENOENTError = new Error("Error: ENOENT")
+        // @ts-expect-error testing
+        ENOENTError["code"] = "ENOENT";
+
+        const fakeFsp = sinon.stub(fsp, "readdir").rejects(ENOENTError);
+
+        const ghe = new GithubExtractor({
+            owner: TEST_OWNER,
+            repo: TEST_REPO,
+            caseInsensitive: true,
+        });
+
+        await expect(ghe.getLocalDirSet("testpath")).rejects.toThrow("not exist");
+    });
+
 });
 
 describe("writeListItem unit tests", async(context) => {

@@ -402,6 +402,26 @@ describe.sequential("downloadTo", context => {
         expect(() => checkFileExists(`${ TEMP_DIR }/somefile.txt`)).not.toThrow();
     });
 
+    it("runs the onFileWritten callback", async() => {
+
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo });
+
+        const onFileWritten = sinon.fake();
+
+        await ghe.downloadTo({ dest: TEMP_DIR, onFileWritten });
+
+        expect(() => checkFileExists(`${ TEMP_DIR }/README.md`)).not.toThrow();
+        expect(() => checkFileExists(`${ TEMP_DIR }/somefolder/yoohoo.html`)).not.toThrow();
+        expect(() => checkFileExists(`${ TEMP_DIR }/somefile.txt`)).not.toThrow();
+
+        expect(onFileWritten.callCount).toBe(4); // because /somefolder/ also counts
+    });
+
 
     it("correctly gets selected files and returns an empty array when there are no typos", async() => {
 

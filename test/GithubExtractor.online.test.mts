@@ -32,6 +32,7 @@ beforeAll(() => {
 beforeEach(async() => {
     await new Promise((res) => setTimeout(res, Math.random() * 1000));
 
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
     fs.rmSync(TEMP_DIR, { recursive: true });
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 
@@ -76,7 +77,6 @@ describe.sequential("getTarBody", context => {
         sinon.reset();
     });
 
-    
     it("makes a second call if the default branch is not main then gets it correctly", async() => {
 
         const owner = "bn-l";
@@ -136,6 +136,20 @@ describe("downloadTo", context => {
         expect(fs.existsSync(`${ TEMP_DIR }/README.md`)).toBe(true);
         expect(fs.existsSync(`${ TEMP_DIR }/somefolder/yoohoo.html`)).toBe(true);
         expect(fs.existsSync(`${ TEMP_DIR }/somefile.txt`)).toBe(true);
+    });
+
+    it("downloads selected files", async() => {
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo });
+
+        await expect(ghe.downloadTo({ dest: TEMP_DIR, selectedPaths: ["README.md"] })).resolves.not.toThrow();
+
+        expect(fs.existsSync(`${ TEMP_DIR }/README.md`)).toBe(true);
+        expect(fs.existsSync(`${ TEMP_DIR }/somefolder/yoohoo.html`)).toBe(false);
+        expect(fs.existsSync(`${ TEMP_DIR }/somefile.txt`)).toBe(false);
     });
 
 });
