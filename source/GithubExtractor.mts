@@ -35,6 +35,10 @@ export interface GithubExtractorOptions {
      */
     repo: string; 
     /**
+     * The github repo branch to get. Defaults to main then master.
+     */
+    branch?: string;
+    /**
      * Whether to ignore casing in paths. Default is false so SomePath/someFile.js will be
      * different to SOMEPATH/somefile.js.
      * @default false
@@ -79,11 +83,6 @@ export interface ListOptions {
      */
     conflictsOnly?: boolean; 
     /**
-     * If false will only list files and folders in the top level. Useful for repos with many files.
-     * @default true
-     */
-    recursive?: boolean;
-    /**
      * Options for the stream to write the repo paths to for visual output as the list is being created. By default it writes to the console.
      */
     streamOptions?: ListStreamOptions;
@@ -127,10 +126,12 @@ export interface DownloadToOptions {
  */
 export class GithubExtractor {
 
+    public branch: GithubExtractorOptions["branch"];
     public caseInsensitive: GithubExtractorOptions["caseInsensitive"];
 
     public owner: GithubExtractorOptions["owner"];
     public repo: GithubExtractorOptions["repo"];
+    
 
     protected debug: boolean = false;
     private requestFn: typeof request = request;
@@ -139,11 +140,12 @@ export class GithubExtractor {
      * @param options - Main class constructor options.
      */
     constructor(
-        { owner, repo, caseInsensitive }: GithubExtractorOptions
+        { owner, repo, caseInsensitive, branch }: GithubExtractorOptions
     ) {
         this.owner = owner;
         this.repo = repo;
         this.caseInsensitive = caseInsensitive ?? false;
+        this.branch = branch;
     }
     
     protected normalizeTarPath(tarPath: string) {
@@ -203,7 +205,7 @@ export class GithubExtractor {
         }
         catch (error) {
             // @ts-expect-error no guard
-            throw new FetchError(`Error getting repo '${ this.owner }/${ this.repo }': ${ error?.message }`);
+            throw new FetchError(`Error getting repo "${ this.owner }/${ this.repo }". It ${ this.branch ? "or the " + this.branch + " branch" : "" } might not exist: ${ error?.message }`);
         }
     }
 
@@ -215,6 +217,11 @@ export class GithubExtractor {
         // (saves a tiny amount of waiting, reduces load a bit on github.com).
 
         // https://stackoverflow.com/questions/60188254/how-is-codeload-github-com-different-to-api-github-com
+
+        // It should fail if branch doesn't exist and not go on to a default.
+        if (this.branch) {
+            return await this.makeRequest(`https://codeload.github.com/${ this.owner }/${ this.repo }/tar.gz/${ this.branch }`);
+        }
 
         const firstTry = `https://codeload.github.com/${ this.owner }/${ this.repo }/tar.gz/main`;
         const secondTry = `https://github.com/${ this.owner }/${ this.repo }/archive/refs/heads/master.tar.gz`;
@@ -417,7 +424,7 @@ export class GithubExtractor {
      * ```
      */
     public async list(
-        { dest, conflictsOnly = false, recursive = true, streamOptions = {}, match }: ListOptions = {}
+        { dest, conflictsOnly = false, streamOptions = {}, match }: ListOptions = {}
     ): Promise<ListItem[]> {
         
         const repoList: ListItem[] = [];
@@ -444,10 +451,8 @@ export class GithubExtractor {
 
             if (match && !match.test(path)) {
                 return false;
-            }
-            // path.slice(1, -1): removes "/" from start and end. Now if there's 
-            // two or more members after the split, we know it's nested.
-            return recursive || path.slice(1, -1).split("/").length < 2;
+            } 
+            return true;
         };
 
         const { body } = await this.getTarBody();

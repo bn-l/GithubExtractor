@@ -231,28 +231,6 @@ describe.sequential("getRepoList", context => {
         ]);
     });
 
-    it("lists a repo non recursively", async() => {
-
-        addRepoIntercept();
-
-        const owner = "bn-l";
-        const repo = "repo"
-
-        const ghe = new GithubExtractor({ owner, repo });
-        
-        const streamOptions = { outputStream: { write: sinon.fake() } };
-        const write = streamOptions.outputStream.write;
-
-        // @ts-expect-error testing
-        await ghe.list({ dest: TEMP_DIR, recursive: false, streamOptions });
-
-        sinon.assert.calledWithExactly(write, "README.md\n");
-        sinon.assert.calledWithExactly(write, "somefile.txt\n");
-        sinon.assert.calledWithExactly(write, "somefolder/\n");
-        sinon.assert.neverCalledWith(write, "somefolder/yoohoo.html\n");
-
-    });
-
     it("lists a repo recursively", async() => {
 
         addRepoIntercept();
@@ -533,7 +511,7 @@ describe.sequential("downloadTo", context => {
 
         const ghe = new GithubExtractor({ owner, repo });
 
-        const list = await ghe.list({ dest: TEMP_DIR, recursive: true });
+        const list = await ghe.list({ dest: TEMP_DIR });
         const listFileNames = list.map(({ filePath }) => filePath);
 
         fs.rmSync(TEMP_DIR, { recursive: true });
@@ -613,7 +591,7 @@ describe.sequential("downloadTo", context => {
 
         const ghe = new GithubExtractor({ owner, repo });
 
-        const list = await ghe.list({ dest: TEMP_DIR, recursive: true });
+        const list = await ghe.list({ dest: TEMP_DIR });
         const listFileNames = list.map(({ filePath }) => filePath);
 
         fs.rmSync(TEMP_DIR, { recursive: true });
@@ -640,6 +618,29 @@ describe.sequential("downloadTo", context => {
         expect(() => checkFileExists(`${ TEMP_DIR }/somefile.txt`)).not.toThrow();
 
         expect(() => checkFileExists(`${ TEMP_DIR }/README.md`)).toThrow();
+    });
+
+    it("correctly does not throw a fetch error on an existant branch", async() => {
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo, branch: "main" });
+
+        await expect(ghe.downloadTo({ dest: TEMP_DIR })).resolves.not.toThrow();
+    });
+
+
+    it("correctly throws a fetch error on a non-existant branch", async() => {
+        addRepoIntercept();
+
+        const owner = "bn-l";
+        const repo = "repo"
+
+        const ghe = new GithubExtractor({ owner, repo, branch: "non-existant" });
+
+        await expect(ghe.downloadTo({ dest: TEMP_DIR })).rejects.toThrow(FetchError);
     });
     
 });
