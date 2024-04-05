@@ -35,14 +35,14 @@ it("constructs an instance", async() => {
     })).not.toThrow();
 });
 
-describe.concurrent("normalizeTarPath unit tests", context => {
+describe.concurrent("normalizeTarPath and stripRepoName unit tests", context => {
 
     it("removes leading folder name", async() => {
         const ghe = new GithubExtractor({
             owner: TEST_OWNER,
             repo: TEST_REPO,
         });
-        expect(ghe["normalizeTarPath"]("Spoon-Knife-1.0.0/README.md")).toBe("README.md");
+        expect(ghe["stripRepoName"]("Spoon-Knife-1.0.0/README.md")).toBe("README.md");
     });
 
     it("removes the leading slash if present and that's it", async() => {
@@ -50,7 +50,7 @@ describe.concurrent("normalizeTarPath unit tests", context => {
             owner: TEST_OWNER,
             repo: TEST_REPO,
         });
-        expect(ghe["normalizeTarPath"]("/Spoon-Knife-1.0.0/README.md")).toBe("Spoon-Knife-1.0.0/README.md");
+        expect(ghe["stripRepoName"]("/Spoon-Knife-1.0.0/README.md")).toBe("Spoon-Knife-1.0.0/README.md");
     });
 
     it("converts everything to lower case if caseInsensitive is true", async() => {
@@ -76,7 +76,7 @@ describe.concurrent("normalizeTarPath unit tests", context => {
             owner: TEST_OWNER,
             repo: TEST_REPO,
         });
-        expect(ghe["normalizeTarPath"]("  	 folder/README.md     ")).toBe("README.md");
+        expect(ghe["normalizeTarPath"]("  	 README.md     ")).toBe("README.md");
     });
 
 

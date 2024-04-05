@@ -18,7 +18,7 @@
   "scripts": {
     "start:dev": "ts-node",
     "bench": "vitest bench --run",
-    "test": "vitest --run --coverage --exclude \"**/*online*\"",
+    "test": "vitest --coverage --exclude \"**/*online*\"",
     "test:single": "vitest --bail=1",
     "test:online": "vitest online --bail=1",
     "test:all": "vitest --run --coverage",

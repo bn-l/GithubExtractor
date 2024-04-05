@@ -147,13 +147,15 @@ export class GithubExtractor {
         this.caseInsensitive = caseInsensitive ?? false;
         this.branch = branch;
     }
+
+    protected stripRepoName(tarPath: string) {
+        return tarPath.slice(tarPath.indexOf("/") + 1);
+    }
     
     protected normalizeTarPath(tarPath: string) {
         // Remove everything before the first "/" to remove the repo name:
         //   someprefixdir/somefile.txt -> somefile.txt
-        return this.caseInsensitive ? 
-            tarPath.slice(tarPath.indexOf("/") + 1).toLowerCase().trim() :
-            tarPath.slice(tarPath.indexOf("/") + 1).trim();
+        return this.caseInsensitive ? tarPath.toLowerCase().trim() : tarPath.trim();
     }
 
     protected normalizeFilePath(filePath: string) {
@@ -298,7 +300,7 @@ export class GithubExtractor {
                     cwd: dest,
                     strip: 1,
                     filter: (fPath) => {
-                        
+                        fPath = this.stripRepoName(fPath);
                         fPath = this.normalizeTarPath(fPath);
                         
                         if (!fPath) return false;
@@ -434,11 +436,12 @@ export class GithubExtractor {
 
         const handleEntry = (entry: tar.ReadEntry) => {
 
-            const filePath = this.normalizeTarPath(entry.path);
-            if (!filePath) return; 
+            const strippedPath = this.stripRepoName(entry.path);
+            const normedPath = this.normalizeTarPath(strippedPath);
+            if (!normedPath) return; 
 
-            const conflict = !!destSet?.has(filePath);
-            const listItem: ListItem = { filePath, conflict };
+            const conflict = !!destSet?.has(normedPath);
+            const listItem: ListItem = { filePath: strippedPath, conflict };
 
             if (!conflictsOnly || conflict) {
                 repoList.push(listItem);
