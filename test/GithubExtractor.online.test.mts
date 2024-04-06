@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach, afterAll, beforeAll, VitestUtils } from "vitest";
+import {rimraf} from "rimraf";
 
 import sinon, { SinonSpy } from "sinon";
 
@@ -33,7 +34,7 @@ beforeEach(async() => {
     await new Promise((res) => setTimeout(res, Math.random() * 1000));
 
     fs.mkdirSync(TEMP_DIR, { recursive: true });
-    fs.rmSync(TEMP_DIR, { recursive: true });
+    rimraf(TEMP_DIR);
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     sinon.reset();

@@ -113,7 +113,7 @@ export interface DownloadToOptions {
      * Pass through options for the tar.extract stream. Not very important
      *  but here for completeness.
      */
-    extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "strip" | "onentry" | "C">;
+    extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "onentry" | "C">;
     /**
      * Callback for when a file is written. Useful for logging or other operations.
      */
@@ -298,7 +298,7 @@ export class GithubExtractor {
                 tar.extract({
                     ...extractOptions,
                     cwd: dest,
-                    strip: 1,
+                    strip: (extractOptions?.strip ?? 0) + 1,
                     filter: (fPath) => {
                         fPath = this.stripRepoName(fPath);
                         fPath = this.normalizeTarPath(fPath);
