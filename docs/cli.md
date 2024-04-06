@@ -1,8 +1,8 @@
 
 
-<img src="./media/ghex-svg-cat.svg" />
+<div><img src="./media/ghex-svg-cat.svg" /></div>
 
-# Quickstart CLI
+## Quickstart CLI
 
 Install [node](https://nodejs.org/en/download) then:
 

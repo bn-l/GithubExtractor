@@ -4,6 +4,16 @@
 
 ## Properties
 
+### branch?
+
+```ts
+optional branch: string;
+```
+
+The github repo branch to get. Defaults to main then master.
+
+***
+
 ### caseInsensitive?
 
 ```ts

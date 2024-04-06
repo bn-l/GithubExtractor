@@ -18,12 +18,7 @@ by default unless extractOptions are set.
 ### extractOptions?
 
 ```ts
-optional extractOptions: Omit<ExtractOptions, 
-  | "filter"
-  | "cwd"
-  | "strip"
-  | "onentry"
-| "C">;
+optional extractOptions: Omit<ExtractOptions, "filter" | "cwd" | "onentry" | "C">;
 ```
 
 Pass through options for the tar.extract stream. Not very important
@@ -39,6 +34,24 @@ optional match: RegExp;
 
 Must match every regular expression if given. If [selectedPaths](DownloadToOptions.md#selectedpaths) is given, it 
 will operate on selected only.
+
+***
+
+### onFileWritten()?
+
+```ts
+optional onFileWritten: (entry) => void;
+```
+
+Callback for when a file is written. Useful for logging or other operations.
+
+#### Parameters
+
+• **entry**: `ReadEntry`
+
+#### Returns
+
+`void`
 
 ***
 

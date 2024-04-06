@@ -21,22 +21,6 @@ true
 
 ***
 
-### newLine?
-
-```ts
-optional newLine: boolean;
-```
-
-Include new line at the end of each listed repo path.
-
-#### Default
-
-```ts
-true
-```
-
-***
-
 ### outputStream?
 
 ```ts
@@ -51,3 +35,23 @@ The stream to write the repo paths to for visual output as the list is being cre
 ```ts
 process.stdout
 ```
+
+***
+
+### prefix?
+
+```ts
+optional prefix: string;
+```
+
+A prefix to add to output. Default is nothing.
+
+***
+
+### suffix?
+
+```ts
+optional suffix: string;
+```
+
+Suffix to add to the output. Defaults to a new line

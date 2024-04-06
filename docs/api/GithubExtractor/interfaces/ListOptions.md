@@ -41,22 +41,6 @@ Must match every regular expression if given.
 
 ***
 
-### recursive?
-
-```ts
-optional recursive: boolean;
-```
-
-If false will only list files and folders in the top level. Useful for repos with many files.
-
-#### Default
-
-```ts
-true
-```
-
-***
-
 ### streamOptions?
 
 ```ts

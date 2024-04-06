@@ -24,6 +24,14 @@ Main class constructor options.
 
 ## Properties
 
+### branch
+
+```ts
+branch: undefined | string;
+```
+
+***
+
 ### caseInsensitive
 
 ```ts
