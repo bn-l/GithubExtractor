@@ -12,10 +12,13 @@ import chalk from "chalk";
 import { closest } from "fastest-levenshtein";
 import fsp from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
-import tar from "tar";
+import * as tar from 'tar'
+import type { TarOptionsWithAliases as ExtractOptions } from "tar";
 import { request } from "undici";
 // import path from "node:path";
 import pathe from "pathe";
+
+
 
 
 export type Typo = [original: string, correction: string];
@@ -111,9 +114,10 @@ export interface DownloadToOptions {
     match?: RegExp;
     /**
      * Pass through options for the tar.extract stream. Not very important
-     *  but here for completeness.
+     *  but here for completeness. See {@link ExtractOptions}
      */
-    extractOptions?: Omit<tar.ExtractOptions, "filter" | "cwd" | "onentry" | "C">;
+    // extractOptions?: Omit<ExtractOptions, "filter" | "cwd" | "onentry" | "C">;
+    extractOptions?: any;
     /**
      * Callback for when a file is written. Useful for logging or other operations.
      */

@@ -8,10 +8,10 @@ export type {
     GithubExtractorOptions,
     ListOptions,
     ListStreamOptions,
-    ListItem,
+    ListItem, 
     Typo,
     GithubExtractor
-} from "./GithubExtractor.mjs";
+} from "./GithubExtractor.mjs"; 
 
 export {
     FetchError,

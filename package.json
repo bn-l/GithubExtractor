@@ -16,6 +16,7 @@
     "url": "https://github.com/bn-l/GithubExtractor.git"
   },
   "scripts": {
+    "eslint-debug": "eslint --debug C:/Users/x230/Desktop/GithubExtractor/source/index.mts",
     "start:dev": "ts-node",
     "bench": "vitest bench --run",
     "test": "vitest --exclude \"**/*online*\"",
@@ -71,8 +72,8 @@
     "@types/fs-minipass": "^2.1.4",
     "@types/node": "^20.10.0",
     "@types/sinon": "^17.0.3",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
     "@vitest/coverage-v8": "^1.4.0",
     "@vitest/ui": "^1.4.0",
     "badgen": "^3.2.3",

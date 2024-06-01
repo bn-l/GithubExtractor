@@ -1,6 +1,6 @@
 
 
-<div><img src="./media/ghex-svg-cat.svg" /></div>
+<img src="./media/ghex-svg-cat.svg" />
 
 ## Quickstart CLI
 
